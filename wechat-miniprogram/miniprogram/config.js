@@ -1,4 +1,4 @@
 module.exports = {
-  // 创建云开发环境后可填入环境 ID；留空时使用当前小程序的默认云环境。
-  cloudEnvId: "",
+  // “订序”正式使用的微信云开发环境。
+  cloudEnvId: "cloud1-d0g1w79k00d72557c",
 };

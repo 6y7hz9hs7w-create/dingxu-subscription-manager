@@ -5,10 +5,11 @@ import test from "node:test";
 const root = new URL("../wechat-miniprogram/", import.meta.url);
 
 test("WeChat mini program uses server-owned silent identity", async () => {
-  const [projectText, appText, appConfigText, serviceText, cloudText, packageText, indexText, calendarText, insightsText, settingsText] = await Promise.all([
+  const [projectText, appText, appConfigText, cloudConfigText, serviceText, cloudText, packageText, indexText, calendarText, insightsText, settingsText] = await Promise.all([
     readFile(new URL("project.config.json", root), "utf8"),
     readFile(new URL("miniprogram/app.js", root), "utf8"),
     readFile(new URL("miniprogram/app.json", root), "utf8"),
+    readFile(new URL("miniprogram/config.js", root), "utf8"),
     readFile(new URL("miniprogram/services/subscriptions.js", root), "utf8"),
     readFile(new URL("cloudfunctions/subscriptionService/index.js", root), "utf8"),
     readFile(new URL("cloudfunctions/subscriptionService/package.json", root), "utf8"),
@@ -25,6 +26,7 @@ test("WeChat mini program uses server-owned silent identity", async () => {
   assert.equal(project.miniprogramRoot, "miniprogram/");
   assert.equal(project.cloudfunctionRoot, "cloudfunctions/");
   assert.equal(appConfig.tabBar.list.length, 4);
+  assert.match(cloudConfigText, /cloud1-d0g1w79k00d72557c/);
   assert.equal(cloudPackage.dependencies["wx-server-sdk"], "4.0.2");
   assert.match(appText, /wx\.cloud\.init/);
   assert.match(appText, /action: "login"/);
