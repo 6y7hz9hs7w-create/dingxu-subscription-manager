@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import SubscriptionApp from "./subscription-app";
-import { chatGPTSignInPath, chatGPTSignOutPath, getChatGPTUser } from "./chatgpt-auth";
+import { chatGPTSignInPath, chatGPTSignOutPath } from "./chatgpt-auth";
+import { getCurrentUser, isEmailAuthConfigured } from "./email-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,14 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const user = await getChatGPTUser();
-  return <SubscriptionApp user={user} signInPath={chatGPTSignInPath("/")} signOutPath={chatGPTSignOutPath("/")} />;
+  const user = await getCurrentUser();
+  const signOutPath = user?.authProvider === "email"
+    ? "/api/auth/email/logout"
+    : chatGPTSignOutPath("/");
+  return <SubscriptionApp
+    emailAuthEnabled={isEmailAuthConfigured()}
+    user={user}
+    signInPath={chatGPTSignInPath("/")}
+    signOutPath={signOutPath}
+  />;
 }

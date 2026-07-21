@@ -15,3 +15,18 @@ export const subscriptions = sqliteTable("subscriptions", {
   status: text("status").notNull().default("active"),
   createdAt: text("created_at").notNull(),
 }, (table) => [index("subscriptions_owner_email_idx").on(table.ownerEmail)]);
+
+export const emailLoginCodes = sqliteTable("email_login_codes", {
+  email: text("email").primaryKey(),
+  codeHash: text("code_hash").notNull(),
+  expiresAt: integer("expires_at").notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  createdAt: integer("created_at").notNull(),
+});
+
+export const emailAuthRateLimits = sqliteTable("email_auth_rate_limits", {
+  limitKey: text("limit_key").primaryKey(),
+  windowStartedAt: integer("window_started_at").notNull(),
+  requestCount: integer("request_count").notNull().default(0),
+  lastRequestAt: integer("last_request_at").notNull(),
+});

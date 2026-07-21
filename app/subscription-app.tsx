@@ -17,12 +17,14 @@ type Subscription = {
 };
 
 type AccountUser = {
+  authProvider: "chatgpt" | "email";
   displayName: string;
   email: string;
   fullName: string | null;
 };
 
 type SubscriptionAppProps = {
+  emailAuthEnabled: boolean;
   user: AccountUser | null;
   signInPath: string;
   signOutPath: string;
@@ -54,7 +56,7 @@ function dateLabel(date: string) {
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
-export default function SubscriptionApp({ user, signInPath, signOutPath }: SubscriptionAppProps) {
+export default function SubscriptionApp({ emailAuthEnabled, user, signInPath, signOutPath }: SubscriptionAppProps) {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>(fallbackSubscriptions);
   const [loading, setLoading] = useState(Boolean(user));
   const [filter, setFilter] = useState("全部");
@@ -66,6 +68,11 @@ export default function SubscriptionApp({ user, signInPath, signOutPath }: Subsc
   const [calendarMonth, setCalendarMonth] = useState(new Date(2026, 6, 1));
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authCodeSent, setAuthCodeSent] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authNotice, setAuthNotice] = useState("");
 
   const loadSubscriptions = async () => {
     try {
@@ -172,6 +179,48 @@ export default function SubscriptionApp({ user, signInPath, signOutPath }: Subsc
     } finally { setBusy(false); }
   };
 
+  const requestEmailCode = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAuthBusy(true);
+    setAuthError("");
+    setAuthNotice("");
+    try {
+      const response = await fetch("/api/auth/email/request-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: authEmail }),
+      });
+      const data = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(data.error || "验证码发送失败");
+      setAuthCodeSent(true);
+      setAuthNotice("验证码已发送，10 分钟内有效");
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "验证码发送失败");
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const verifyEmailCode = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAuthBusy(true);
+    setAuthError("");
+    try {
+      const form = new FormData(event.currentTarget);
+      const response = await fetch("/api/auth/email/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: authEmail, code: form.get("code") }),
+      });
+      const data = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(data.error || "登录没有成功");
+      window.location.reload();
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "登录没有成功");
+      setAuthBusy(false);
+    }
+  };
+
   if (!user) {
     return <main className="auth-page">
       <a className="auth-brand" href="#" aria-label="订序首页"><span className="brand-mark"><i /><i /></span><span>订序</span></a>
@@ -181,8 +230,20 @@ export default function SubscriptionApp({ user, signInPath, signOutPath }: Subsc
         <h1>你的订阅，只属于你</h1>
         <p className="auth-lead">登录后管理续费日期、消费分析与取消计划。每个账号的数据独立保存，其他人无法查看。</p>
         <div className="auth-points"><span><i>✓</i>按账号隔离数据</span><span><i>✓</i>跨设备同步</span><span><i>✓</i>随时安全退出</span></div>
+        {emailAuthEnabled ? <>
+          {!authCodeSent ? <form className="email-auth-form" onSubmit={requestEmailCode}>
+            <label htmlFor="login-email">邮箱地址</label>
+            <div><input id="login-email" type="email" autoComplete="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@example.com" required /><button disabled={authBusy}>{authBusy ? "发送中…" : "获取验证码"}</button></div>
+          </form> : <form className="email-auth-form" onSubmit={verifyEmailCode}>
+            <div className="email-auth-heading"><span>验证码已发送至 {authEmail}</span><button type="button" onClick={() => { setAuthCodeSent(false); setAuthError(""); setAuthNotice(""); }}>更换邮箱</button></div>
+            <div><input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} placeholder="6 位验证码" required autoFocus /><button disabled={authBusy}>{authBusy ? "验证中…" : "登录"}</button></div>
+          </form>}
+          {authNotice && <p className="auth-message success" role="status">{authNotice}</p>}
+          {authError && <p className="auth-message error" role="alert">{authError}</p>}
+          <div className="auth-divider"><span>或</span></div>
+        </> : <p className="email-auth-pending">邮箱验证码登录正在完成安全配置</p>}
         <a className="signin-button" href={signInPath}><b>◉</b>使用 ChatGPT 账号登录</a>
-        <small>登录即表示仅授权“订序”识别你的账号，用于隔离订阅数据。</small>
+        <small>使用同一邮箱登录会进入同一份独立数据空间。</small>
       </section>
     </main>;
   }
@@ -353,7 +414,7 @@ export default function SubscriptionApp({ user, signInPath, signOutPath }: Subsc
         <div className="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title">
           <div className="account-head"><div><p className="eyebrow">ACCOUNT CENTER</p><h2 id="account-title">设置与个人中心</h2><span>管理你的账号与数据空间。</span></div><button onClick={() => setShowAccount(false)} aria-label="关闭个人中心">×</button></div>
           <div className="account-body">
-            <section className="account-profile"><span>{accountInitial}</span><div><strong>{user.fullName || user.displayName}</strong><small>{user.email}</small><i>已使用 ChatGPT 账号登录</i></div></section>
+            <section className="account-profile"><span>{accountInitial}</span><div><strong>{user.fullName || user.displayName}</strong><small>{user.email}</small><i>已使用{user.authProvider === "email" ? "邮箱验证码" : " ChatGPT 账号"}登录</i></div></section>
             <section className="account-stats" aria-label="账号数据概览"><div><strong>{subscriptions.length}</strong><span>全部订阅</span></div><div><strong>{active.length}</strong><span>生效中</span></div><div><strong>{money(monthlyCost)}</strong><span>月均支出</span></div></section>
             <section className="privacy-card"><span>锁</span><div><strong>独立数据空间</strong><p>所有订阅都绑定到当前登录账号。其他用户登录后只能看到他们自己的数据。</p></div></section>
             <div className="account-actions"><button onClick={() => setShowAccount(false)}>完成</button><a href={signOutPath}>退出登录</a></div>
