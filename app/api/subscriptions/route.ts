@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { NextRequest, NextResponse } from "next/server";
+import { getChatGPTUser } from "../../chatgpt-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -22,11 +23,17 @@ function db() {
   return env.DB;
 }
 
+async function authenticatedOwner() {
+  const user = await getChatGPTUser();
+  return user?.email.trim().toLowerCase() ?? null;
+}
+
 async function ensureDatabase() {
   const database = db();
   await database
     .prepare(`CREATE TABLE IF NOT EXISTS subscriptions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      owner_email TEXT NOT NULL DEFAULT '',
       name TEXT NOT NULL,
       category TEXT NOT NULL,
       amount_cents INTEGER NOT NULL,
@@ -44,9 +51,14 @@ async function ensureDatabase() {
 
 export async function GET() {
   try {
+    const ownerEmail = await authenticatedOwner();
+    if (!ownerEmail) return NextResponse.json({ error: "请先登录" }, { status: 401 });
     await ensureDatabase();
     const result = await db()
-      .prepare("SELECT * FROM subscriptions ORDER BY next_charge_date ASC")
+      .prepare(`SELECT id, name, category, amount_cents, billing_cycle, next_charge_date,
+        color, mark, note, reminder_days, status, created_at
+        FROM subscriptions WHERE owner_email = ? ORDER BY next_charge_date ASC`)
+      .bind(ownerEmail)
       .all();
     return NextResponse.json({ subscriptions: result.results });
   } catch (error) {
@@ -57,6 +69,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const ownerEmail = await authenticatedOwner();
+    if (!ownerEmail) return NextResponse.json({ error: "请先登录" }, { status: 401 });
     await ensureDatabase();
     const body = (await request.json()) as SubscriptionInput;
     if (!body.name || !body.category || !body.amount || !body.nextChargeDate) {
@@ -64,9 +78,10 @@ export async function POST(request: NextRequest) {
     }
     await db()
       .prepare(`INSERT INTO subscriptions
-        (name, category, amount_cents, billing_cycle, next_charge_date, color, mark, note, reminder_days, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`)
+        (owner_email, name, category, amount_cents, billing_cycle, next_charge_date, color, mark, note, reminder_days, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`)
       .bind(
+        ownerEmail,
         body.name.trim(),
         body.category,
         Math.round(body.amount * 100),
@@ -88,27 +103,29 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const ownerEmail = await authenticatedOwner();
+    if (!ownerEmail) return NextResponse.json({ error: "请先登录" }, { status: 401 });
     await ensureDatabase();
     const body = (await request.json()) as SubscriptionInput;
     if (!body.id || !body.action) {
       return NextResponse.json({ error: "操作无效" }, { status: 400 });
     }
     if (body.action === "cancel") {
-      await db().prepare("UPDATE subscriptions SET status = 'cancel_pending' WHERE id = ?").bind(body.id).run();
+      await db().prepare("UPDATE subscriptions SET status = 'cancel_pending' WHERE id = ? AND owner_email = ?").bind(body.id, ownerEmail).run();
     } else if (body.action === "restore") {
-      await db().prepare("UPDATE subscriptions SET status = 'active' WHERE id = ?").bind(body.id).run();
+      await db().prepare("UPDATE subscriptions SET status = 'active' WHERE id = ? AND owner_email = ?").bind(body.id, ownerEmail).run();
     } else {
       const item = await db()
-        .prepare("SELECT billing_cycle, next_charge_date FROM subscriptions WHERE id = ?")
-        .bind(body.id)
+        .prepare("SELECT billing_cycle, next_charge_date FROM subscriptions WHERE id = ? AND owner_email = ?")
+        .bind(body.id, ownerEmail)
         .first<{ billing_cycle: string; next_charge_date: string }>();
       if (!item) return NextResponse.json({ error: "订阅不存在" }, { status: 404 });
       const next = new Date(`${item.next_charge_date}T00:00:00`);
       if (item.billing_cycle === "yearly") next.setFullYear(next.getFullYear() + 1);
       else next.setMonth(next.getMonth() + 1);
       await db()
-        .prepare("UPDATE subscriptions SET next_charge_date = ?, status = 'active' WHERE id = ?")
-        .bind(next.toISOString().slice(0, 10), body.id)
+        .prepare("UPDATE subscriptions SET next_charge_date = ?, status = 'active' WHERE id = ? AND owner_email = ?")
+        .bind(next.toISOString().slice(0, 10), body.id, ownerEmail)
         .run();
     }
     return NextResponse.json({ ok: true });

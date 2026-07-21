@@ -16,6 +16,18 @@ type Subscription = {
   status: "active" | "cancel_pending";
 };
 
+type AccountUser = {
+  displayName: string;
+  email: string;
+  fullName: string | null;
+};
+
+type SubscriptionAppProps = {
+  user: AccountUser | null;
+  signInPath: string;
+  signOutPath: string;
+};
+
 const fallbackSubscriptions: Subscription[] = [];
 
 const categories = ["全部", "影音娱乐", "音乐", "效率工具", "云存储", "健康运动"];
@@ -42,14 +54,15 @@ function dateLabel(date: string) {
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
-export default function SubscriptionApp() {
+export default function SubscriptionApp({ user, signInPath, signOutPath }: SubscriptionAppProps) {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>(fallbackSubscriptions);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(user));
   const [filter, setFilter] = useState("全部");
   const [query, setQuery] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showInsights, setShowInsights] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date(2026, 6, 1));
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
@@ -69,7 +82,7 @@ export default function SubscriptionApp() {
 
   // Loading the persisted list is the one state synchronization performed on mount.
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void loadSubscriptions(); }, []);
+  useEffect(() => { if (user) void loadSubscriptions(); }, [user]);
   useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(""), 2800);
@@ -80,6 +93,7 @@ export default function SubscriptionApp() {
       if (event.key === "Escape") {
         setShowCalendar(false);
         setShowInsights(false);
+        setShowAccount(false);
         setShowAdd(false);
       }
     };
@@ -158,6 +172,23 @@ export default function SubscriptionApp() {
     } finally { setBusy(false); }
   };
 
+  if (!user) {
+    return <main className="auth-page">
+      <a className="auth-brand" href="#" aria-label="续续首页"><span className="brand-mark"><i /><i /></span><span>续续</span></a>
+      <section className="auth-card">
+        <div className="auth-icon">续</div>
+        <p className="eyebrow">PRIVATE SUBSCRIPTION SPACE</p>
+        <h1>你的订阅，只属于你</h1>
+        <p className="auth-lead">登录后管理续费日期、消费分析与取消计划。每个账号的数据独立保存，其他人无法查看。</p>
+        <div className="auth-points"><span><i>✓</i>按账号隔离数据</span><span><i>✓</i>跨设备同步</span><span><i>✓</i>随时安全退出</span></div>
+        <a className="signin-button" href={signInPath}><b>◉</b>使用 ChatGPT 账号登录</a>
+        <small>登录即表示仅授权“续续”识别你的账号，用于隔离订阅数据。</small>
+      </section>
+    </main>;
+  }
+
+  const accountInitial = user.displayName.trim().slice(0, 1).toUpperCase() || "我";
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -172,8 +203,8 @@ export default function SubscriptionApp() {
         </nav>
         <div className="side-bottom">
           <div className="tip-card"><span>省</span><strong>理性订阅</strong><p>每月复盘一次，钱要花在值得的地方。</p></div>
-          <button className="ghost-nav"><span>⚙</span>设置</button>
-          <div className="profile"><span>我</span><div><strong>我的账户</strong><small>个人空间</small></div><b>···</b></div>
+          <button className="ghost-nav" onClick={() => setShowAccount(true)}><span>⚙</span>设置与账号</button>
+          <button className="profile" onClick={() => setShowAccount(true)}><span>{accountInitial}</span><div><strong>{user.fullName || "我的账户"}</strong><small>{user.email}</small></div><b>···</b></button>
         </div>
       </aside>
 
@@ -181,13 +212,13 @@ export default function SubscriptionApp() {
         <header className="topbar">
           <div className="mobile-brand"><span className="brand-mark"><i /><i /></span>续续</div>
           <div className="search"><span>⌕</span><input aria-label="搜索订阅" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索订阅…" /></div>
-          <button className="icon-button" aria-label="通知">♧<span /></button>
+          <button className="top-account" aria-label="打开账号个人中心" onClick={() => setShowAccount(true)}><span>{accountInitial}</span><div><strong>{user.fullName || "我的账户"}</strong><small>个人中心</small></div></button>
           <button className="add-button" onClick={() => setShowAdd(true)}><b>＋</b>添加订阅</button>
         </header>
 
         <div className="page-wrap">
           <section id="overview" className="hero-row">
-            <div><p className="eyebrow">TUESDAY · 7月21日</p><h1>下午好 <span>☀</span></h1><p>{subscriptions.length ? <>你的订阅都在掌控中。未来 7 天有 <strong>{upcoming.length} 笔</strong>即将续费。</> : <>这里还没有订阅记录，添加第一项开始管理。</>}</p></div>
+            <div><p className="eyebrow">TUESDAY · 7月21日</p><h1>下午好，{user.fullName || "朋友"} <span>☀</span></h1><p>{subscriptions.length ? <>你的订阅都在掌控中。未来 7 天有 <strong>{upcoming.length} 笔</strong>即将续费。</> : <>你的个人空间还没有订阅记录，添加第一项开始管理。</>}</p></div>
             <div className="month-switch"><button aria-label="上个月">‹</button><span>2026年 7月</span><button aria-label="下个月">›</button></div>
           </section>
 
@@ -315,6 +346,18 @@ export default function SubscriptionApp() {
           </section>
           <div className="insights-advice"><span>✦</span><div><strong>小续建议</strong><p>{subscriptions.length ? <>定期检查使用频率，当前预计每月可省 {money(potentialSaving)}。</> : <>从零开始记录你的订阅，分析只使用你自己添加的数据。</>}</p></div></div>
           <div className="insights-actions"><button onClick={() => setShowInsights(false)}>完成</button><button onClick={() => { setShowInsights(false); setShowAdd(true); }}>＋ 添加订阅</button></div>
+        </div>
+      </div>}
+
+      {showAccount && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAccount(false); }}>
+        <div className="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title">
+          <div className="account-head"><div><p className="eyebrow">ACCOUNT CENTER</p><h2 id="account-title">设置与个人中心</h2><span>管理你的账号与数据空间。</span></div><button onClick={() => setShowAccount(false)} aria-label="关闭个人中心">×</button></div>
+          <div className="account-body">
+            <section className="account-profile"><span>{accountInitial}</span><div><strong>{user.fullName || user.displayName}</strong><small>{user.email}</small><i>已使用 ChatGPT 账号登录</i></div></section>
+            <section className="account-stats" aria-label="账号数据概览"><div><strong>{subscriptions.length}</strong><span>全部订阅</span></div><div><strong>{active.length}</strong><span>生效中</span></div><div><strong>{money(monthlyCost)}</strong><span>月均支出</span></div></section>
+            <section className="privacy-card"><span>锁</span><div><strong>独立数据空间</strong><p>所有订阅都绑定到当前登录账号。其他用户登录后只能看到他们自己的数据。</p></div></section>
+            <div className="account-actions"><button onClick={() => setShowAccount(false)}>完成</button><a href={signOutPath}>退出登录</a></div>
+          </div>
         </div>
       </div>}
 

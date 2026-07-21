@@ -15,6 +15,13 @@
       "when": 1784622600000,
       "tag": "0001_clear_seed_data",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784635107202,
+      "tag": "0002_mean_darkstar",
+      "breakpoints": true
     }
   ]
 }

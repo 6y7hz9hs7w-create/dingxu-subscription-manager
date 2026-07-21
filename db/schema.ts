@@ -1,7 +1,8 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const subscriptions = sqliteTable("subscriptions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  ownerEmail: text("owner_email").notNull().default(""),
   name: text("name").notNull(),
   category: text("category").notNull(),
   amountCents: integer("amount_cents").notNull(),
@@ -13,4 +14,4 @@ export const subscriptions = sqliteTable("subscriptions", {
   reminderDays: integer("reminder_days").notNull().default(3),
   status: text("status").notNull().default("active"),
   createdAt: text("created_at").notNull(),
-});
+}, (table) => [index("subscriptions_owner_email_idx").on(table.ownerEmail)]);
