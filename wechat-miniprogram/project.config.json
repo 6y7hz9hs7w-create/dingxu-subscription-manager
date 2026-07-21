@@ -1,5 +1,5 @@
 {
-  "appid": "touristappid",
+  "appid": "wxa5a0b5d34c4f21fa",
   "cloudfunctionRoot": "cloudfunctions/",
   "compileType": "miniprogram",
   "description": "订序个人订阅管理微信小程序",

@@ -21,6 +21,7 @@ test("WeChat mini program uses server-owned silent identity", async () => {
   const project = JSON.parse(projectText);
   const appConfig = JSON.parse(appConfigText);
   const cloudPackage = JSON.parse(packageText);
+  assert.equal(project.appid, "wxa5a0b5d34c4f21fa");
   assert.equal(project.miniprogramRoot, "miniprogram/");
   assert.equal(project.cloudfunctionRoot, "cloudfunctions/");
   assert.equal(appConfig.tabBar.list.length, 4);
