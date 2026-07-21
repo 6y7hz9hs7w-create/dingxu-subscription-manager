@@ -1,0 +1,24 @@
+<view class="page insights-page">
+  <view class="intro"><text class="eyebrow">SPENDING INSIGHTS</text><text class="page-title">消费分析</text><text class="page-lead">把每一笔会员支出看清楚。</text></view>
+
+  <view class="summary-grid">
+    <view class="summary-card primary"><text>月均支出</text><text>{{monthlyText}}</text><text>按当前账单周期折算</text></view>
+    <view class="summary-card"><text>年度预估</text><text>{{yearlyText}}</text><text>未来 12 个月预计</text></view>
+    <view class="summary-card"><text>生效订阅</text><text>{{activeCount}} 项</text><text>仅统计生效项目</text></view>
+  </view>
+
+  <view class="panel breakdown">
+    <view class="breakdown-head"><view><text class="eyebrow">BREAKDOWN</text><text>消费结构</text></view><text>月均口径</text></view>
+    <view class="loading" wx:if="{{loading}}">正在生成分析…</view>
+    <view class="category-list" wx:elif="{{categories.length}}">
+      <view class="category-row" wx:for="{{categories}}" wx:key="name">
+        <view class="category-title"><view style="background: {{item.color}}"></view><text>{{item.name}}</text><text>{{item.percentage}}%</text></view>
+        <view class="track"><view style="width: {{item.percentage}}%; background: {{item.color}}"></view></view>
+        <text class="category-amount">{{item.amountText}}</text>
+      </view>
+    </view>
+    <view class="empty-state" wx:else><view class="empty-icon">◔</view><text class="empty-title">还没有可分析的消费</text><text class="empty-copy">添加订阅后，会自动计算支出和分类占比。</text><button class="secondary-button" bindtap="addSubscription">添加订阅</button></view>
+  </view>
+
+  <view class="advice"><view>✦</view><view><text>订序建议</text><text wx:if="{{activeCount}}">定期检查使用频率，当前预计每月可省 {{savingText}}。</text><text wx:else>从零开始记录你的订阅，分析只使用你自己添加的数据。</text></view></view>
+</view>

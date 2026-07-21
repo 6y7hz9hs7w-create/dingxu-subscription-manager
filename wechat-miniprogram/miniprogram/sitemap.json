@@ -1,0 +1,4 @@
+{
+  "desc": "订序小程序页面索引配置",
+  "rules": [{ "action": "disallow", "page": "*" }]
+}

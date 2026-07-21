@@ -1,0 +1,69 @@
+<view class="page dashboard-page">
+  <view class="brand-row">
+    <view class="brand-mark"><view></view><view></view></view>
+    <text class="brand-name">订序</text>
+    <button class="add-small" bindtap="addSubscription" aria-label="添加订阅">＋</button>
+  </view>
+
+  <view class="hero">
+    <text class="eyebrow">PERSONAL SUBSCRIPTIONS</text>
+    <text class="page-title">把每一份订阅安排好</text>
+    <text class="page-lead">微信已安全识别你的独立数据空间。</text>
+  </view>
+
+  <view class="stats-grid">
+    <view class="stat-card primary">
+      <text>月均支出</text><text class="stat-value">{{monthlyText}}</text><text class="stat-note">{{activeCount}} 项生效中</text>
+    </view>
+    <view class="stat-card">
+      <text>年度预估</text><text class="stat-value">{{yearlyText}}</text><text class="stat-note">按当前周期折算</text>
+    </view>
+    <view class="stat-card warning-card">
+      <text>7 天内扣款</text><text class="stat-value">{{upcomingText}}</text><text class="stat-note">{{upcoming.length}} 笔需留意</text>
+    </view>
+  </view>
+
+  <view class="section-head">
+    <view><text class="eyebrow">UP NEXT</text><text class="section-title">即将续费</text></view>
+    <text class="section-count">{{upcoming.length}} 项</text>
+  </view>
+  <view class="panel renew-panel">
+    <block wx:if="{{upcoming.length}}">
+      <view class="renew-item" wx:for="{{upcoming}}" wx:key="_id">
+        <view class="service-mark" style="background: {{item.color}}">{{item.mark}}</view>
+        <view class="service-copy"><text class="service-name">{{item.name}}</text><text>{{item.dateText}} · {{item.daysText}}</text></view>
+        <view class="service-price"><text>{{item.amountText}}</text><text>/{{item.cycleText}}</text></view>
+      </view>
+    </block>
+    <view class="empty-state compact" wx:else>
+      <view class="empty-icon">○</view><text class="empty-title">未来 7 天没有扣款</text><text class="empty-copy">你的近期订阅很轻松。</text>
+    </view>
+  </view>
+
+  <view class="section-head subscriptions-head">
+    <view><text class="eyebrow">ALL SERVICES</text><text class="section-title">我的订阅</text></view>
+    <text class="section-count">{{subscriptions.length}} 项</text>
+  </view>
+
+  <view class="loading" wx:if="{{loading}}">正在读取你的订阅…</view>
+  <view class="subscription-list" wx:elif="{{subscriptions.length}}">
+    <view class="subscription-card panel {{item.status === 'cancel_pending' ? 'cancelled' : ''}}" wx:for="{{subscriptions}}" wx:key="_id">
+      <view class="subscription-top">
+        <view class="service-mark" style="background: {{item.color}}">{{item.mark}}</view>
+        <view class="subscription-main"><text class="service-name">{{item.name}}</text><text>{{item.note || item.category}}</text></view>
+        <view class="service-price"><text>{{item.amountText}}</text><text>/{{item.cycleText}}</text></view>
+      </view>
+      <view class="subscription-meta"><text>{{item.status === 'cancel_pending' ? '计划取消' : '下次续费'}}</text><text>{{item.dateText}}</text></view>
+      <view class="card-actions">
+        <button data-id="{{item._id}}" data-operation="renew" bindtap="manageSubscription">确认续费</button>
+        <button class="danger" wx:if="{{item.status !== 'cancel_pending'}}" data-id="{{item._id}}" data-operation="cancel" bindtap="manageSubscription">到期取消</button>
+        <button wx:else data-id="{{item._id}}" data-operation="restore" bindtap="manageSubscription">恢复订阅</button>
+      </view>
+    </view>
+  </view>
+  <view class="panel empty-state" wx:else>
+    <view class="empty-icon">＋</view><text class="empty-title">从第一项订阅开始</text><text class="empty-copy">记录服务、金额和续费日期，数据只属于当前微信账号。</text><button class="primary-button" bindtap="addSubscription">添加第一项订阅</button>
+  </view>
+
+  <button class="floating-add" bindtap="addSubscription">＋ 添加订阅</button>
+</view>

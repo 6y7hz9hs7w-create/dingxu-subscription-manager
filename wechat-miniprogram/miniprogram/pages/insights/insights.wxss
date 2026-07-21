@@ -1,0 +1,27 @@
+.intro { margin: 18rpx 5rpx 32rpx; display: flex; flex-direction: column; }
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 17rpx; }
+.summary-card { min-height: 182rpx; padding: 24rpx; display: flex; flex-direction: column; border: 1rpx solid var(--line); border-radius: 24rpx; background: var(--white); }
+.summary-card.primary { grid-column: 1 / -1; min-height: 190rpx; background: var(--deep); color: #fff; }
+.summary-card > text:first-child { color: #7c8882; font-size: 22rpx; }
+.summary-card.primary > text:first-child, .summary-card.primary > text:last-child { color: #bfd0ca; }
+.summary-card > text:nth-child(2) { margin-top: 18rpx; font-family: Georgia, serif; font-size: 40rpx; font-weight: 700; }
+.summary-card > text:last-child { margin-top: auto; color: #919995; font-size: 19rpx; }
+.breakdown { margin-top: 28rpx; padding: 28rpx 24rpx; }
+.breakdown-head { display: flex; align-items: flex-end; justify-content: space-between; }
+.breakdown-head > view { display: flex; flex-direction: column; }
+.breakdown-head > view text:last-child { font-family: Georgia, "Songti SC", serif; font-size: 32rpx; font-weight: 700; }
+.breakdown-head > text { color: #86908b; font-size: 19rpx; }
+.category-list { margin-top: 34rpx; display: flex; flex-direction: column; gap: 31rpx; }
+.category-row { display: grid; grid-template-columns: 1fr 105rpx; gap: 12rpx 18rpx; }
+.category-title { display: grid; grid-template-columns: 15rpx 1fr auto; align-items: center; gap: 12rpx; }
+.category-title view { width: 15rpx; height: 15rpx; border-radius: 50%; }
+.category-title text { font-size: 22rpx; font-weight: 600; }
+.category-title text:last-child { color: #909893; font-size: 19rpx; font-weight: 400; }
+.track { height: 14rpx; grid-column: 1; overflow: hidden; border-radius: 14rpx; background: #eeece5; }
+.track view { height: 100%; min-width: 8rpx; border-radius: 14rpx; }
+.category-amount { grid-column: 2; grid-row: 1 / span 2; align-self: center; text-align: right; font-family: Georgia, serif; font-size: 24rpx; font-weight: 700; }
+.advice { margin-top: 24rpx; padding: 24rpx; display: flex; gap: 18rpx; border-radius: 22rpx; background: #f8eadf; }
+.advice > view:first-child { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; flex: none; border-radius: 16rpx; background: #f1bea5; color: #8f493c; }
+.advice > view:last-child { display: flex; flex-direction: column; gap: 8rpx; }
+.advice > view:last-child text:first-child { font-size: 23rpx; font-weight: 700; }
+.advice > view:last-child text:last-child { color: #7d716b; font-size: 21rpx; line-height: 1.55; }

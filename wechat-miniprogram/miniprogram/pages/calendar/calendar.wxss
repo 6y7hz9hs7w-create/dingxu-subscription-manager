@@ -1,0 +1,24 @@
+.intro { margin: 18rpx 5rpx 32rpx; display: flex; flex-direction: column; }
+.calendar-panel { padding: 28rpx 20rpx 22rpx; }
+.calendar-toolbar { display: grid; grid-template-columns: 70rpx 1fr 70rpx; align-items: center; }
+.calendar-toolbar button { width: 62rpx; height: 62rpx; padding: 0; border: 1rpx solid #dfdcd3; border-radius: 17rpx; background: #f7f5ee; font-size: 40rpx; line-height: 58rpx; }
+.calendar-toolbar button:last-child { justify-self: end; }
+.calendar-toolbar > text { text-align: center; font-family: Georgia, "Songti SC", serif; font-size: 29rpx; font-weight: 700; }
+.calendar-week, .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8rpx; }
+.calendar-week { margin-top: 30rpx; }
+.calendar-week text { color: #929a96; text-align: center; font-size: 19rpx; }
+.calendar-grid { margin-top: 10rpx; }
+.calendar-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6rpx; border: 1rpx solid transparent; border-radius: 18rpx; font-size: 23rpx; }
+.calendar-cell.blank { visibility: hidden; }
+.calendar-cell.today { background: #e5eee9; color: var(--green); font-weight: 800; }
+.calendar-cell.has-renewal { border-color: #d7ddd9; background: #faf9f5; font-weight: 700; }
+.calendar-cell view { width: 10rpx; height: 10rpx; border-radius: 50%; }
+.section-head { margin: 44rpx 5rpx 17rpx; display: flex; align-items: flex-end; justify-content: space-between; color: var(--muted); font-size: 21rpx; }
+.section-title { color: var(--ink); font-family: Georgia, "Songti SC", serif; font-size: 34rpx; font-weight: 700; }
+.agenda { padding: 6rpx 24rpx; }
+.agenda-item { min-height: 112rpx; display: flex; align-items: center; gap: 17rpx; border-top: 1rpx solid #ece9e0; }
+.agenda-item:first-child { border-top: 0; }
+.agenda-copy { min-width: 0; display: flex; flex: 1; flex-direction: column; gap: 7rpx; }
+.agenda-copy text:first-child { font-size: 25rpx; font-weight: 700; }
+.agenda-copy text:last-child { overflow: hidden; color: #838c87; font-size: 20rpx; text-overflow: ellipsis; white-space: nowrap; }
+.agenda-price { font-family: Georgia, serif; font-size: 26rpx; font-weight: 700; }

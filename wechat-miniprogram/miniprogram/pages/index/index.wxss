@@ -1,0 +1,40 @@
+.dashboard-page { padding-bottom: 150rpx; }
+.brand-row { height: 72rpx; display: flex; align-items: center; }
+.brand-mark { width: 54rpx; height: 54rpx; position: relative; }
+.brand-mark view { width: 34rpx; height: 22rpx; position: absolute; top: 6rpx; left: 2rpx; border: 5rpx solid var(--green); border-radius: 50%; transform: rotate(-42deg); }
+.brand-mark view + view { top: 27rpx; left: 18rpx; transform: rotate(138deg); }
+.brand-name { margin-left: 10rpx; font-size: 36rpx; font-weight: 800; letter-spacing: 6rpx; }
+.add-small { width: 66rpx; height: 66rpx; margin: 0 0 0 auto; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 18rpx; background: var(--green); color: #fff; font-size: 38rpx; line-height: 1; }
+.hero { margin: 42rpx 0 32rpx; display: flex; flex-direction: column; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18rpx; }
+.stat-card { min-height: 196rpx; padding: 25rpx; display: flex; flex-direction: column; border: 1rpx solid var(--line); border-radius: 26rpx; background: var(--white); font-size: 23rpx; font-weight: 600; }
+.stat-card.primary { background: var(--deep); color: #fff; }
+.stat-card.warning-card { grid-column: 1 / -1; min-height: 156rpx; background: #fff8dc; }
+.stat-value { margin-top: 23rpx; font-family: Georgia, serif; font-size: 45rpx; font-weight: 700; }
+.stat-note { margin-top: auto; color: #8a958f; font-size: 20rpx; font-weight: 400; }
+.primary .stat-note { color: #bfd0ca; }
+.section-head { margin: 46rpx 4rpx 17rpx; display: flex; align-items: flex-end; justify-content: space-between; }
+.section-head view { display: flex; flex-direction: column; }
+.section-title { font-family: Georgia, "Songti SC", serif; font-size: 34rpx; font-weight: 700; }
+.section-count { color: var(--muted); font-size: 21rpx; }
+.renew-panel { padding: 10rpx 24rpx; }
+.renew-item { min-height: 112rpx; display: flex; align-items: center; gap: 18rpx; border-top: 1rpx solid #ece9e0; }
+.renew-item:first-child { border-top: 0; }
+.service-copy, .subscription-main { min-width: 0; display: flex; flex: 1; flex-direction: column; gap: 7rpx; }
+.service-copy text:last-child, .subscription-main text:last-child { overflow: hidden; color: #87918c; font-size: 21rpx; text-overflow: ellipsis; white-space: nowrap; }
+.service-name { color: var(--ink); font-size: 26rpx; font-weight: 700; }
+.service-price { min-width: 106rpx; display: flex; flex-direction: column; align-items: flex-end; }
+.service-price text:first-child { font-family: Georgia, serif; font-size: 29rpx; font-weight: 700; }
+.service-price text:last-child { color: #87918c; font-size: 19rpx; }
+.compact { padding: 42rpx 20rpx 34rpx; }
+.subscriptions-head { margin-top: 52rpx; }
+.subscription-list { display: flex; flex-direction: column; gap: 18rpx; }
+.subscription-card { padding: 25rpx; }
+.subscription-card.cancelled { background: #efeee8; opacity: .76; }
+.subscription-top { display: flex; align-items: center; gap: 18rpx; }
+.subscription-meta { margin-top: 24rpx; padding-top: 20rpx; display: flex; justify-content: space-between; border-top: 1rpx solid #ece9e1; color: #7f8a85; font-size: 21rpx; }
+.subscription-meta text:last-child { color: #40564d; font-weight: 700; }
+.card-actions { margin-top: 22rpx; display: grid; grid-template-columns: 1fr 1fr; gap: 14rpx; }
+.card-actions button { height: 64rpx; padding: 0; border-radius: 15rpx; background: #edf3ef; color: #315c4d; font-size: 21rpx; font-weight: 700; line-height: 64rpx; }
+.card-actions button.danger { background: #fff0eb; color: #a35d4f; }
+.floating-add { height: 86rpx; position: fixed; right: 28rpx; bottom: 32rpx; z-index: 5; padding: 0 34rpx; border-radius: 43rpx; background: var(--green); color: #fff; box-shadow: 0 12rpx 35rpx rgba(36, 89, 74, .28); font-size: 25rpx; font-weight: 700; line-height: 86rpx; }

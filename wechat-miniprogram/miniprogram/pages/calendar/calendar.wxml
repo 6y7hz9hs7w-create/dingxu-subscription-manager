@@ -1,0 +1,24 @@
+<view class="page calendar-page">
+  <view class="intro"><text class="eyebrow">RENEWAL CALENDAR</text><text class="page-title">续费日历</text><text class="page-lead">每一笔续费，都提前看见。</text></view>
+
+  <view class="panel calendar-panel">
+    <view class="calendar-toolbar"><button bindtap="previousMonth" aria-label="上个月">‹</button><text>{{monthTitle}}</text><button bindtap="nextMonth" aria-label="下个月">›</button></view>
+    <view class="calendar-week"><text wx:for="{{weekdays}}" wx:key="*this">{{item}}</text></view>
+    <view class="calendar-grid">
+      <view class="calendar-cell {{item.blank ? 'blank' : ''}} {{item.isToday ? 'today' : ''}} {{item.hasRenewal ? 'has-renewal' : ''}}" wx:for="{{cells}}" wx:key="key">
+        <text wx:if="{{!item.blank}}">{{item.day}}</text><view wx:if="{{item.hasRenewal}}" style="background: {{item.dotColor}}"></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section-head"><text class="section-title">本月续费</text><text>{{monthItems.length}} 项</text></view>
+  <view class="panel agenda">
+    <view class="agenda-item" wx:for="{{monthItems}}" wx:key="_id">
+      <view class="service-mark" style="background: {{item.color}}">{{item.mark}}</view>
+      <view class="agenda-copy"><text>{{item.name}}</text><text>{{item.dateText}} · {{item.note || item.category}}</text></view>
+      <text class="agenda-price">{{item.amountText}}</text>
+    </view>
+    <view class="empty-state" wx:if="{{!loading && !monthItems.length}}"><view class="empty-icon">○</view><text class="empty-title">本月暂无续费安排</text><text class="empty-copy">添加订阅后，日期会自动出现在这里。</text><button class="secondary-button" bindtap="addSubscription">添加订阅</button></view>
+    <view class="loading" wx:if="{{loading}}">正在读取日历…</view>
+  </view>
+</view>

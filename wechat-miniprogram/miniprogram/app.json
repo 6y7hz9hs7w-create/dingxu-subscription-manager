@@ -1,0 +1,31 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/calendar/calendar",
+    "pages/insights/insights",
+    "pages/settings/settings",
+    "pages/add/add"
+  ],
+  "window": {
+    "backgroundColor": "#f7f5ee",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#f7f5ee",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "订序"
+  },
+  "tabBar": {
+    "backgroundColor": "#fffefa",
+    "borderStyle": "black",
+    "color": "#84908a",
+    "selectedColor": "#24594a",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "总览" },
+      { "pagePath": "pages/calendar/calendar", "text": "日历" },
+      { "pagePath": "pages/insights/insights", "text": "分析" },
+      { "pagePath": "pages/settings/settings", "text": "我的" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
+}

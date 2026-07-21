@@ -1,0 +1,22 @@
+<view class="page settings-page">
+  <view class="intro"><text class="eyebrow">ACCOUNT CENTER</text><text class="page-title">设置与个人中心</text><text class="page-lead">管理你的微信账号与独立数据空间。</text></view>
+
+  <view class="account-card">
+    <view class="avatar">微</view>
+    <view><text>微信账号已安全识别</text><text>{{idHint}}</text><text>无感登录已开启</text></view>
+  </view>
+
+  <view class="account-stats">
+    <view><text>{{totalCount}}</text><text>全部订阅</text></view>
+    <view><text>{{activeCount}}</text><text>生效中</text></view>
+    <view><text>{{monthlyText}}</text><text>月均支出</text></view>
+  </view>
+
+  <view class="privacy-card"><view>锁</view><view><text>独立数据空间</text><text>所有订阅都绑定到当前小程序的微信身份。其他用户只能看到他们自己的数据。</text></view></view>
+  <view class="privacy-card no-phone"><view>隐</view><view><text>不获取手机号</text><text>登录仅使用微信提供的匿名用户标识，不申请昵称、头像或手机号码。</text></view></view>
+
+  <view class="settings-section panel">
+    <view><text>数据管理</text><text>清空当前微信账号下的全部订阅</text></view>
+    <button bindtap="clearAll">清空数据</button>
+  </view>
+</view>

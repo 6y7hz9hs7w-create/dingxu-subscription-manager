@@ -1,0 +1,23 @@
+.intro { margin: 18rpx 5rpx 32rpx; display: flex; flex-direction: column; }
+.account-card { padding: 30rpx; display: flex; align-items: center; gap: 22rpx; border-radius: 28rpx; background: var(--deep); color: #fff; }
+.avatar { width: 92rpx; height: 92rpx; display: flex; align-items: center; justify-content: center; flex: none; border-radius: 24rpx; background: #f2c96e; color: var(--ink); font-size: 31rpx; font-weight: 800; }
+.account-card > view:last-child { min-width: 0; display: flex; flex-direction: column; gap: 7rpx; }
+.account-card > view:last-child text:first-child { font-size: 27rpx; font-weight: 700; }
+.account-card > view:last-child text:nth-child(2) { color: #c1d3cd; font-size: 21rpx; }
+.account-card > view:last-child text:last-child { width: max-content; padding: 6rpx 13rpx; border-radius: 10rpx; background: rgba(255,255,255,.1); color: #cfe0da; font-size: 18rpx; }
+.account-stats { margin: 20rpx 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12rpx; }
+.account-stats view { min-width: 0; padding: 25rpx 8rpx; display: flex; flex-direction: column; align-items: center; gap: 9rpx; border: 1rpx solid var(--line); border-radius: 20rpx; background: var(--white); }
+.account-stats text:first-child { max-width: 100%; overflow: hidden; font-family: Georgia, serif; font-size: 29rpx; font-weight: 700; text-overflow: ellipsis; }
+.account-stats text:last-child { color: #87918c; font-size: 18rpx; }
+.privacy-card { margin-top: 18rpx; padding: 25rpx; display: flex; align-items: flex-start; gap: 19rpx; border-radius: 22rpx; background: #eef4e5; }
+.privacy-card.no-phone { background: #eef3f6; }
+.privacy-card > view:first-child { width: 58rpx; height: 58rpx; display: flex; align-items: center; justify-content: center; flex: none; border-radius: 16rpx; background: #d9e8c5; color: #3b6651; font-size: 19rpx; font-weight: 800; }
+.privacy-card.no-phone > view:first-child { background: #d9e7ed; color: #3d6472; }
+.privacy-card > view:last-child { display: flex; flex-direction: column; gap: 8rpx; }
+.privacy-card > view:last-child text:first-child { font-size: 23rpx; font-weight: 700; }
+.privacy-card > view:last-child text:last-child { color: #6a786f; font-size: 21rpx; line-height: 1.55; }
+.settings-section { margin-top: 30rpx; padding: 25rpx; display: flex; align-items: center; gap: 20rpx; }
+.settings-section > view { display: flex; flex: 1; flex-direction: column; gap: 7rpx; }
+.settings-section > view text:first-child { font-size: 24rpx; font-weight: 700; }
+.settings-section > view text:last-child { color: var(--muted); font-size: 19rpx; }
+.settings-section button { margin: 0; padding: 0 22rpx; border: 1rpx solid #efd5cb; border-radius: 16rpx; background: #fff8f4; color: #a35d4f; font-size: 21rpx; line-height: 66rpx; }

@@ -1,0 +1,17 @@
+{
+  "appid": "touristappid",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "compileType": "miniprogram",
+  "description": "订序个人订阅管理微信小程序",
+  "miniprogramRoot": "miniprogram/",
+  "projectname": "dingxu-subscriptions",
+  "setting": {
+    "checkInvalidKey": true,
+    "checkSiteMap": true,
+    "compileHotReLoad": true,
+    "es6": true,
+    "minified": true,
+    "postcss": true,
+    "urlCheck": true
+  }
+}
