@@ -85,22 +85,6 @@ or enforce explicit server-side membership or allowlist checks.
 Use SIWC for account pages, user-specific dashboards, saved records, and write
 actions tied to the current ChatGPT user. Leave public content anonymous.
 
-## Resend Email Login
-
-Email verification-code login is implemented alongside ChatGPT sign-in. Configure
-these production runtime variables in Sites; never commit their values:
-
-- `RESEND_API_KEY`: a Resend API key, stored as a secret
-- `RESEND_FROM_EMAIL`: a sender on a verified Resend domain, such as
-  `订序 <login@updates.example.com>`
-- `EMAIL_AUTH_SECRET`: a cryptographically random 32-byte-or-longer secret used
-  to sign one-time codes and 30-day session cookies
-
-Email codes expire after 10 minutes, are stored only as HMAC hashes, and allow at
-most five verification attempts. Request limits apply per email and source
-address. ChatGPT and email login share the same data space when their normalized
-email addresses match.
-
 ## Useful Commands
 
 - `npm run dev`: start local development

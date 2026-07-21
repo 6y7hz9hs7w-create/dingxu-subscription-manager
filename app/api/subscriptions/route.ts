@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "../../email-auth";
+import { getChatGPTUser } from "../../chatgpt-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ function db() {
 }
 
 async function authenticatedOwner() {
-  const user = await getCurrentUser();
+  const user = await getChatGPTUser();
   return user?.email.trim().toLowerCase() ?? null;
 }
 

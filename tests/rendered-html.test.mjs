@@ -3,19 +3,16 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("subscription manager ships its core flows", async () => {
-  const [page, app, api, auth, emailAuth, requestCode, verifyCode, schema, layout, css] = await Promise.all([
+  const [page, app, api, auth, schema, layout, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/subscription-app.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/subscriptions/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/chatgpt-auth.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/email-auth.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/auth/email/request-code/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/auth/email/verify/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
-  assert.match(page, /getCurrentUser/);
+  assert.match(page, /getChatGPTUser/);
   assert.match(page, /signInPath=/);
   assert.match(app, /本月订阅支出/);
   assert.match(app, /即将续费/);
@@ -30,8 +27,6 @@ test("subscription manager ships its core flows", async () => {
   assert.match(app, /type="radio" name="color"/);
   assert.match(app, /ACCOUNT CENTER/);
   assert.match(app, /使用 ChatGPT 账号登录/);
-  assert.match(app, /获取验证码/);
-  assert.match(app, /one-time-code/);
   assert.match(app, /独立数据空间/);
   assert.doesNotMatch(app, /颜色 \{i \+ 1\}/);
   assert.match(app, /const fallbackSubscriptions: Subscription\[\] = \[\]/);
@@ -41,16 +36,8 @@ test("subscription manager ships its core flows", async () => {
   assert.match(api, /AND owner_email = \?/);
   assert.match(api, /status: 401/);
   assert.match(auth, /oai-authenticated-user-email/);
-  assert.match(emailAuth, /EMAIL_SESSION_COOKIE/);
-  assert.match(emailAuth, /crypto\.subtle/);
-  assert.match(emailAuth, /authProvider: "chatgpt" \| "email"/);
-  assert.match(requestCode, /https:\/\/api\.resend\.com\/emails/);
-  assert.match(requestCode, /Idempotency-Key/);
-  assert.match(requestCode, /email_auth_rate_limits/);
-  assert.match(verifyCode, /attempts >= 5/);
-  assert.match(verifyCode, /httpOnly: true/);
   assert.match(schema, /ownerEmail: text\("owner_email"\)/);
-  assert.match(schema, /emailLoginCodes/);
+  assert.doesNotMatch(app + api, /Resend|验证码|api\/auth\/email/);
   assert.doesNotMatch(api + app, /爱奇艺|iCloud|网易云|Apple Music|许同学|seedRows/);
   assert.match(app, /订序/);
   assert.doesNotMatch(app + page + layout, new RegExp("续" + "续|小" + "续"));
