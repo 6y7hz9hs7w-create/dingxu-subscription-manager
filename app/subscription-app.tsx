@@ -41,6 +41,8 @@ export default function SubscriptionApp() {
   const [filter, setFilter] = useState("全部");
   const [query, setQuery] = useState("");
   const [showAdd, setShowAdd] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(new Date(2026, 6, 1));
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -63,6 +65,16 @@ export default function SubscriptionApp() {
     const timer = window.setTimeout(() => setToast(""), 2800);
     return () => window.clearTimeout(timer);
   }, [toast]);
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowCalendar(false);
+        setShowAdd(false);
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, []);
 
   const active = subscriptions.filter((item) => item.status === "active");
   const monthlyCost = active.reduce((sum, item) => sum + (item.billing_cycle === "yearly" ? Math.round(item.amount_cents / 12) : item.amount_cents), 0);
@@ -82,6 +94,18 @@ export default function SubscriptionApp() {
     active.forEach((item) => totals.set(item.category, (totals.get(item.category) || 0) + (item.billing_cycle === "yearly" ? item.amount_cents / 12 : item.amount_cents)));
     return [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
   }, [subscriptions]);
+
+  const calendarCells = useMemo(() => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const leading = new Date(year, month, 1).getDay();
+    const total = new Date(year, month + 1, 0).getDate();
+    return [...Array.from({ length: leading }, () => null), ...Array.from({ length: total }, (_, index) => index + 1)];
+  }, [calendarMonth]);
+  const monthSubscriptions = useMemo(() => subscriptions.filter((item) => {
+    const date = new Date(`${item.next_charge_date}T00:00:00`);
+    return date.getFullYear() === calendarMonth.getFullYear() && date.getMonth() === calendarMonth.getMonth();
+  }), [subscriptions, calendarMonth]);
 
   const act = async (id: number, action: "cancel" | "renew" | "restore") => {
     setBusy(true);
@@ -132,7 +156,7 @@ export default function SubscriptionApp() {
         <nav className="side-nav" aria-label="主导航">
           <a className="active" href="#overview"><span>⌂</span>总览</a>
           <a href="#subscriptions"><span>▦</span>我的订阅</a>
-          <a href="#calendar"><span>□</span>续费日历</a>
+          <button className={showCalendar ? "active" : ""} onClick={() => setShowCalendar(true)}><span>□</span>续费日历</button>
           <a href="#insights"><span>◔</span>消费分析</a>
         </nav>
         <div className="side-bottom">
@@ -217,7 +241,42 @@ export default function SubscriptionApp() {
         </div>
       </main>
 
-      <nav className="mobile-nav" aria-label="移动端导航"><a className="active" href="#overview">⌂<span>总览</span></a><a href="#subscriptions">▦<span>订阅</span></a><button onClick={() => setShowAdd(true)}>＋</button><a href="#calendar">□<span>日历</span></a><a href="#insights">◔<span>分析</span></a></nav>
+      <nav className="mobile-nav" aria-label="移动端导航"><a className="active" href="#overview">⌂<span>总览</span></a><a href="#subscriptions">▦<span>订阅</span></a><button className="mobile-add" onClick={() => setShowAdd(true)}>＋</button><button className="nav-item" onClick={() => setShowCalendar(true)}>□<span>日历</span></button><a href="#insights">◔<span>分析</span></a></nav>
+
+      {showCalendar && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowCalendar(false); }}>
+        <div className="calendar-modal" role="dialog" aria-modal="true" aria-labelledby="calendar-title">
+          <div className="calendar-head">
+            <div><p className="eyebrow">RENEWAL CALENDAR</p><h2 id="calendar-title">续费日历</h2><span>每一笔续费，都提前看见。</span></div>
+            <button onClick={() => setShowCalendar(false)} aria-label="关闭续费日历">×</button>
+          </div>
+          <div className="calendar-toolbar">
+            <button aria-label="上个月" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}>‹</button>
+            <strong>{calendarMonth.getFullYear()}年 {calendarMonth.getMonth() + 1}月</strong>
+            <button aria-label="下个月" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}>›</button>
+          </div>
+          <div className="calendar-week" aria-hidden="true">{["日", "一", "二", "三", "四", "五", "六"].map((day) => <span key={day}>{day}</span>)}</div>
+          <div className="calendar-grid" aria-label={`${calendarMonth.getFullYear()}年${calendarMonth.getMonth() + 1}月`}>
+            {calendarCells.map((day, index) => {
+              if (!day) return <span className="calendar-day blank" key={`blank-${index}`} />;
+              const dateKey = `${calendarMonth.getFullYear()}-${String(calendarMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const items = monthSubscriptions.filter((item) => item.next_charge_date === dateKey);
+              const isToday = dateKey === "2026-07-21";
+              return <button className={`calendar-day ${isToday ? "today" : ""} ${items.length ? "has-renewal" : ""}`} key={dateKey} aria-label={`${dateKey}${items.length ? `，${items.length}项续费` : ""}`}>
+                <span>{day}</span>{items.length > 0 && <i style={{ background: items[0].color }} />}
+              </button>;
+            })}
+          </div>
+          <div className="calendar-agenda">
+            <div className="agenda-title"><strong>本月续费</strong><span>{monthSubscriptions.length} 项</span></div>
+            {monthSubscriptions.length ? monthSubscriptions.map((item) => <div className="agenda-item" key={item.id}>
+              <div className="service-mark" style={{ background: item.color }}>{item.mark}</div>
+              <div><strong>{item.name}</strong><span>{dateLabel(item.next_charge_date)} · {item.note || item.category}</span></div>
+              <b>{money(item.amount_cents)}</b>
+            </div>) : <div className="calendar-empty"><span>○</span><div><strong>本月暂无续费安排</strong><p>添加订阅后，扣款日期会自动出现在日历中。</p></div></div>}
+          </div>
+          <div className="calendar-actions"><button onClick={() => setShowCalendar(false)}>完成</button><button onClick={() => { setShowCalendar(false); setShowAdd(true); }}>＋ 添加订阅</button></div>
+        </div>
+      </div>}
 
       {showAdd && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowAdd(false); }}>
         <div className="modal" role="dialog" aria-modal="true" aria-labelledby="add-title">
