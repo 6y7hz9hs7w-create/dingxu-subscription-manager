@@ -6,20 +6,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  const imageUrl = `${protocol}://${host}/og.png`;
+  const imageUrl = `${protocol}://${host}/og-dingxu.png`;
   const description = "集中管理会员订阅、续费日期和取消提醒，清楚知道每一笔钱花在哪里。";
 
   return {
-    title: { default: "续续｜订阅管理", template: "%s｜续续" },
+    title: { default: "订序｜个人订阅管理", template: "%s｜订序" },
     description,
     icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
     openGraph: {
-      title: "续续｜订阅管理",
+      title: "订序｜个人订阅管理",
       description,
       type: "website",
-      images: [{ url: imageUrl, width: 1731, height: 909, alt: "续续订阅管理" }],
+      images: [{ url: imageUrl, width: 1731, height: 909, alt: "订序个人订阅管理" }],
     },
-    twitter: { card: "summary_large_image", title: "续续｜订阅管理", description, images: [imageUrl] },
+    twitter: { card: "summary_large_image", title: "订序｜个人订阅管理", description, images: [imageUrl] },
   };
 }
 

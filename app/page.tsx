@@ -5,8 +5,8 @@ import { chatGPTSignInPath, chatGPTSignOutPath, getChatGPTUser } from "./chatgpt
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "订阅管理",
-  description: "把每一笔订阅，都续在值得的地方。",
+  title: "个人订阅管理",
+  description: "把每一份订阅，安排得井然有序。",
 };
 
 export default async function Home() {

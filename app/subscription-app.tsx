@@ -174,7 +174,7 @@ export default function SubscriptionApp({ user, signInPath, signOutPath }: Subsc
 
   if (!user) {
     return <main className="auth-page">
-      <a className="auth-brand" href="#" aria-label="续续首页"><span className="brand-mark"><i /><i /></span><span>续续</span></a>
+      <a className="auth-brand" href="#" aria-label="订序首页"><span className="brand-mark"><i /><i /></span><span>订序</span></a>
       <section className="auth-card">
         <div className="auth-icon">续</div>
         <p className="eyebrow">PRIVATE SUBSCRIPTION SPACE</p>
@@ -182,7 +182,7 @@ export default function SubscriptionApp({ user, signInPath, signOutPath }: Subsc
         <p className="auth-lead">登录后管理续费日期、消费分析与取消计划。每个账号的数据独立保存，其他人无法查看。</p>
         <div className="auth-points"><span><i>✓</i>按账号隔离数据</span><span><i>✓</i>跨设备同步</span><span><i>✓</i>随时安全退出</span></div>
         <a className="signin-button" href={signInPath}><b>◉</b>使用 ChatGPT 账号登录</a>
-        <small>登录即表示仅授权“续续”识别你的账号，用于隔离订阅数据。</small>
+        <small>登录即表示仅授权“订序”识别你的账号，用于隔离订阅数据。</small>
       </section>
     </main>;
   }
@@ -192,8 +192,8 @@ export default function SubscriptionApp({ user, signInPath, signOutPath }: Subsc
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <a className="brand" href="#top" aria-label="续续首页">
-          <span className="brand-mark"><i /><i /></span><span>续续</span>
+        <a className="brand" href="#top" aria-label="订序首页">
+          <span className="brand-mark"><i /><i /></span><span>订序</span>
         </a>
         <nav className="side-nav" aria-label="主导航">
           <a className="active" href="#overview"><span>⌂</span>总览</a>
@@ -210,7 +210,7 @@ export default function SubscriptionApp({ user, signInPath, signOutPath }: Subsc
 
       <main id="top" className="main-content">
         <header className="topbar">
-          <div className="mobile-brand"><span className="brand-mark"><i /><i /></span>续续</div>
+          <div className="mobile-brand"><span className="brand-mark"><i /><i /></span>订序</div>
           <div className="search"><span>⌕</span><input aria-label="搜索订阅" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索订阅…" /></div>
           <button className="top-account" aria-label="打开账号个人中心" onClick={() => setShowAccount(true)}><span>{accountInitial}</span><div><strong>{user.fullName || "我的账户"}</strong><small>个人中心</small></div></button>
           <button className="add-button" onClick={() => setShowAdd(true)}><b>＋</b>添加订阅</button>
@@ -254,7 +254,7 @@ export default function SubscriptionApp({ user, signInPath, signOutPath }: Subsc
                   <div className="bar-row" key={category}><span>{category}</span><div><i style={{ width: `${Math.max(amount / categorySpend[0][1] * 100, 10)}%`, background: ["#28604F", "#F2C84B", "#EE8C74", "#9DC7E8"][index] }} /></div><strong>{money(Math.round(amount))}</strong></div>
                 )) : <div className="empty-bars"><i /><i /><i /><span>添加订阅后查看消费分布</span></div>}
               </div>
-              <div className="insight-callout"><span>✦</span><div><strong>小续发现</strong><p>{subscriptions.length ? <>定期检查使用频率，预计每月可省 {money(potentialSaving)}。</> : <>至少添加 2 项订阅后，这里会给出更有价值的节省建议。</>}</p></div></div>
+              <div className="insight-callout"><span>✦</span><div><strong>订序发现</strong><p>{subscriptions.length ? <>定期检查使用频率，预计每月可省 {money(potentialSaving)}。</> : <>至少添加 2 项订阅后，这里会给出更有价值的节省建议。</>}</p></div></div>
             </article>
           </section>
 
@@ -344,7 +344,7 @@ export default function SubscriptionApp({ user, signInPath, signOutPath }: Subsc
               </div>;
             })}</div> : <div className="insights-empty"><span>◔</span><strong>还没有可分析的消费</strong><p>添加订阅后，会自动计算月均支出、年度预估和分类占比。</p></div>}
           </section>
-          <div className="insights-advice"><span>✦</span><div><strong>小续建议</strong><p>{subscriptions.length ? <>定期检查使用频率，当前预计每月可省 {money(potentialSaving)}。</> : <>从零开始记录你的订阅，分析只使用你自己添加的数据。</>}</p></div></div>
+          <div className="insights-advice"><span>✦</span><div><strong>订序建议</strong><p>{subscriptions.length ? <>定期检查使用频率，当前预计每月可省 {money(potentialSaving)}。</> : <>从零开始记录你的订阅，分析只使用你自己添加的数据。</>}</p></div></div>
           <div className="insights-actions"><button onClick={() => setShowInsights(false)}>完成</button><button onClick={() => { setShowInsights(false); setShowAdd(true); }}>＋ 添加订阅</button></div>
         </div>
       </div>}
