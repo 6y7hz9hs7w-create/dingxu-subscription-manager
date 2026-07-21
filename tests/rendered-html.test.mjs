@@ -20,6 +20,9 @@ test("subscription manager ships its core flows", async () => {
   assert.match(app, /setShowInsights\(true\)/);
   assert.match(app, /SPENDING INSIGHTS/);
   assert.match(app, /消费结构/);
+  assert.match(app, /className="color-picker"/);
+  assert.match(app, /type="radio" name="color"/);
+  assert.doesNotMatch(app, /颜色 \{i \+ 1\}/);
   assert.match(app, /const fallbackSubscriptions: Subscription\[\] = \[\]/);
   assert.match(api, /CREATE TABLE IF NOT EXISTS subscriptions/);
   assert.match(api, /export async function (GET|POST|PATCH)/);

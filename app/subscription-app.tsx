@@ -19,7 +19,14 @@ type Subscription = {
 const fallbackSubscriptions: Subscription[] = [];
 
 const categories = ["全部", "影音娱乐", "音乐", "效率工具", "云存储", "健康运动"];
-const colorOptions = ["#FFE46B", "#B8DBFF", "#FFB9AE", "#CDEB7B", "#D8D2C6", "#FFC1D3"];
+const colorOptions = [
+  { value: "#FFE46B", label: "明亮黄" },
+  { value: "#B8DBFF", label: "天空蓝" },
+  { value: "#FFB9AE", label: "珊瑚粉" },
+  { value: "#CDEB7B", label: "青柠绿" },
+  { value: "#D8D2C6", label: "暖灰色" },
+  { value: "#FFC1D3", label: "樱花粉" },
+];
 const today = new Date("2026-07-21T00:00:00");
 
 function money(cents: number) {
@@ -321,7 +328,13 @@ export default function SubscriptionApp() {
             <label>订阅金额<input name="amount" type="number" step="0.01" min="0.01" required placeholder="¥ 0.00" /></label>
             <label>下次续费<input name="nextChargeDate" type="date" min="2026-07-21" required defaultValue="2026-08-21" /></label>
             <label>提前提醒<select name="reminderDays" defaultValue="3"><option value="1">1 天前</option><option value="3">3 天前</option><option value="5">5 天前</option><option value="7">7 天前</option></select></label>
-            <label>标记颜色<select name="color" defaultValue={colorOptions[0]}>{colorOptions.map((color, i) => <option key={color} value={color}>颜色 {i + 1}</option>)}</select></label>
+            <fieldset className="color-picker">
+              <legend>标记颜色</legend>
+              <div>{colorOptions.map((color, index) => <label className="color-choice" key={color.value} title={color.label}>
+                <input type="radio" name="color" value={color.value} defaultChecked={index === 0} aria-label={color.label} />
+                <span style={{ background: color.value }} />
+              </label>)}</div>
+            </fieldset>
             <label className="full">备注<input name="note" placeholder="例如：与家人共享" /></label>
             <div className="form-actions"><button type="button" onClick={() => setShowAdd(false)}>取消</button><button className="submit" type="submit" disabled={busy}>{busy ? "正在添加…" : "添加并开启提醒"}</button></div>
           </form>
