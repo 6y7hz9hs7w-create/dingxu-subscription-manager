@@ -17,6 +17,9 @@ test("subscription manager ships its core flows", async () => {
   assert.match(app, /setShowCalendar\(true\)/);
   assert.match(app, /RENEWAL CALENDAR/);
   assert.match(app, /本月续费/);
+  assert.match(app, /setShowInsights\(true\)/);
+  assert.match(app, /SPENDING INSIGHTS/);
+  assert.match(app, /消费结构/);
   assert.match(app, /const fallbackSubscriptions: Subscription\[\] = \[\]/);
   assert.match(api, /CREATE TABLE IF NOT EXISTS subscriptions/);
   assert.match(api, /export async function (GET|POST|PATCH)/);

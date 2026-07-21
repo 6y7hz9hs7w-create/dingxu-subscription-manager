@@ -42,6 +42,7 @@ export default function SubscriptionApp() {
   const [query, setQuery] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date(2026, 6, 1));
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
@@ -59,6 +60,8 @@ export default function SubscriptionApp() {
     }
   };
 
+  // Loading the persisted list is the one state synchronization performed on mount.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadSubscriptions(); }, []);
   useEffect(() => {
     if (!toast) return;
@@ -69,6 +72,7 @@ export default function SubscriptionApp() {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setShowCalendar(false);
+        setShowInsights(false);
         setShowAdd(false);
       }
     };
@@ -91,7 +95,7 @@ export default function SubscriptionApp() {
 
   const categorySpend = useMemo(() => {
     const totals = new Map<string, number>();
-    active.forEach((item) => totals.set(item.category, (totals.get(item.category) || 0) + (item.billing_cycle === "yearly" ? item.amount_cents / 12 : item.amount_cents)));
+    subscriptions.filter((item) => item.status === "active").forEach((item) => totals.set(item.category, (totals.get(item.category) || 0) + (item.billing_cycle === "yearly" ? item.amount_cents / 12 : item.amount_cents)));
     return [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
   }, [subscriptions]);
 
@@ -157,7 +161,7 @@ export default function SubscriptionApp() {
           <a className="active" href="#overview"><span>⌂</span>总览</a>
           <a href="#subscriptions"><span>▦</span>我的订阅</a>
           <button className={showCalendar ? "active" : ""} onClick={() => setShowCalendar(true)}><span>□</span>续费日历</button>
-          <a href="#insights"><span>◔</span>消费分析</a>
+          <button className={showInsights ? "active" : ""} onClick={() => setShowInsights(true)}><span>◔</span>消费分析</button>
         </nav>
         <div className="side-bottom">
           <div className="tip-card"><span>省</span><strong>理性订阅</strong><p>每月复盘一次，钱要花在值得的地方。</p></div>
@@ -184,7 +188,7 @@ export default function SubscriptionApp() {
             <article className="stat-card primary"><div className="stat-top"><span>本月订阅支出</span><b>¥</b></div><strong>{money(monthlyCost)}</strong><div className="stat-foot"><span>{subscriptions.length ? "按当前订阅计算" : "添加订阅后自动统计"}</span><i>{active.length} 项生效中</i></div><div className="budget-track"><span style={{ width: subscriptions.length ? "18%" : "0%" }} /></div></article>
             <article className="stat-card"><div className="stat-top"><span>年度预估</span><b className="peach">↗</b></div><strong>{money(yearlyCost)}</strong><div className="stat-foot"><span>共 {active.length} 项生效中</span><i>¥{Math.round(yearlyCost / 100 / 365)}/天</i></div></article>
             <article className="stat-card"><div className="stat-top"><span>7 天内将扣款</span><b className="yellow">!</b></div><strong>{money(upcomingTotal)}</strong><div className="stat-foot"><span>{upcoming.length ? `最近：${dateLabel(upcoming[0].next_charge_date)}` : "暂无扣款"}</span><i className="warning">需留意</i></div></article>
-            <article className="stat-card saving"><div className="stat-top"><span>本月可省</span><b className="mint">叶</b></div><strong>{money(potentialSaving)}</strong><div className="stat-foot"><span>{subscriptions.length ? "来自智能建议" : "暂无分析数据"}</span>{subscriptions.length > 0 && <button onClick={() => document.getElementById("insights")?.scrollIntoView({ behavior: "smooth" })}>查看建议 →</button>}</div></article>
+            <article className="stat-card saving"><div className="stat-top"><span>本月可省</span><b className="mint">叶</b></div><strong>{money(potentialSaving)}</strong><div className="stat-foot"><span>{subscriptions.length ? "来自智能建议" : "暂无分析数据"}</span>{subscriptions.length > 0 && <button onClick={() => setShowInsights(true)}>查看建议 →</button>}</div></article>
           </section>
 
           <section id="calendar" className="content-grid">
@@ -205,7 +209,7 @@ export default function SubscriptionApp() {
             </article>
 
             <article id="insights" className="panel insight-panel">
-              <div className="panel-title"><div><p className="eyebrow">INSIGHTS</p><h2>花在哪里</h2></div><button>本月⌄</button></div>
+              <div className="panel-title"><div><p className="eyebrow">INSIGHTS</p><h2>花在哪里</h2></div><button onClick={() => setShowInsights(true)}>查看完整分析 →</button></div>
               <div className="spend-total"><span>月均订阅</span><strong>{money(monthlyCost)}</strong></div>
               <div className="bars">
                 {categorySpend.length ? categorySpend.map(([category, amount], index) => (
@@ -241,7 +245,7 @@ export default function SubscriptionApp() {
         </div>
       </main>
 
-      <nav className="mobile-nav" aria-label="移动端导航"><a className="active" href="#overview">⌂<span>总览</span></a><a href="#subscriptions">▦<span>订阅</span></a><button className="mobile-add" onClick={() => setShowAdd(true)}>＋</button><button className="nav-item" onClick={() => setShowCalendar(true)}>□<span>日历</span></button><a href="#insights">◔<span>分析</span></a></nav>
+      <nav className="mobile-nav" aria-label="移动端导航"><a className="active" href="#overview">⌂<span>总览</span></a><a href="#subscriptions">▦<span>订阅</span></a><button className="mobile-add" onClick={() => setShowAdd(true)}>＋</button><button className={`nav-item ${showCalendar ? "active" : ""}`} onClick={() => setShowCalendar(true)}>□<span>日历</span></button><button className={`nav-item ${showInsights ? "active" : ""}`} onClick={() => setShowInsights(true)}>◔<span>分析</span></button></nav>
 
       {showCalendar && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowCalendar(false); }}>
         <div className="calendar-modal" role="dialog" aria-modal="true" aria-labelledby="calendar-title">
@@ -275,6 +279,35 @@ export default function SubscriptionApp() {
             </div>) : <div className="calendar-empty"><span>○</span><div><strong>本月暂无续费安排</strong><p>添加订阅后，扣款日期会自动出现在日历中。</p></div></div>}
           </div>
           <div className="calendar-actions"><button onClick={() => setShowCalendar(false)}>完成</button><button onClick={() => { setShowCalendar(false); setShowAdd(true); }}>＋ 添加订阅</button></div>
+        </div>
+      </div>}
+
+      {showInsights && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowInsights(false); }}>
+        <div className="insights-modal" role="dialog" aria-modal="true" aria-labelledby="insights-title">
+          <div className="insights-head">
+            <div><p className="eyebrow">SPENDING INSIGHTS</p><h2 id="insights-title">消费分析</h2><span>把每一笔会员支出看清楚。</span></div>
+            <button onClick={() => setShowInsights(false)} aria-label="关闭消费分析">×</button>
+          </div>
+          <div className="insights-summary" aria-label="消费概览">
+            <article><span>月均支出</span><strong>{money(monthlyCost)}</strong><small>按当前账单周期折算</small></article>
+            <article><span>年度预估</span><strong>{money(yearlyCost)}</strong><small>未来 12 个月预计支出</small></article>
+            <article><span>生效订阅</span><strong>{active.length}<i> 项</i></strong><small>{subscriptions.length - active.length} 项计划取消</small></article>
+          </div>
+          <section className="insights-breakdown" aria-labelledby="breakdown-title">
+            <div className="insights-section-title"><div><p className="eyebrow">BREAKDOWN</p><h3 id="breakdown-title">消费结构</h3></div><span>月均口径</span></div>
+            {categorySpend.length ? <div className="insights-rows">{categorySpend.map(([category, amount], index) => {
+              const colors = ["#28604F", "#F2C84B", "#EE8C74", "#9DC7E8"];
+              const percentage = monthlyCost ? Math.round(amount / monthlyCost * 100) : 0;
+              return <div className="insights-row" key={category}>
+                <span className="insights-dot" style={{ background: colors[index] }} />
+                <div><strong>{category}</strong><span>{percentage}%</span></div>
+                <div className="insights-track"><i style={{ width: `${Math.max(percentage, 4)}%`, background: colors[index] }} /></div>
+                <b>{money(Math.round(amount))}</b>
+              </div>;
+            })}</div> : <div className="insights-empty"><span>◔</span><strong>还没有可分析的消费</strong><p>添加订阅后，会自动计算月均支出、年度预估和分类占比。</p></div>}
+          </section>
+          <div className="insights-advice"><span>✦</span><div><strong>小续建议</strong><p>{subscriptions.length ? <>定期检查使用频率，当前预计每月可省 {money(potentialSaving)}。</> : <>从零开始记录你的订阅，分析只使用你自己添加的数据。</>}</p></div></div>
+          <div className="insights-actions"><button onClick={() => setShowInsights(false)}>完成</button><button onClick={() => { setShowInsights(false); setShowAdd(true); }}>＋ 添加订阅</button></div>
         </div>
       </div>}
 
