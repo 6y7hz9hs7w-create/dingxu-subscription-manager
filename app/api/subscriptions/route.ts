@@ -17,15 +17,6 @@ type SubscriptionInput = {
   action?: "cancel" | "renew" | "restore";
 };
 
-const seedRows = [
-  ["爱奇艺 VIP", "影音娱乐", 2580, "monthly", "2026-07-23", "#FFE46B", "爱", "连续包月", 2],
-  ["iCloud+", "云存储", 2100, "monthly", "2026-07-26", "#B8DBFF", "☁", "200GB", 3],
-  ["网易云音乐", "音乐", 1800, "monthly", "2026-07-29", "#FFB9AE", "音", "黑胶 VIP", 3],
-  ["Keep", "健康运动", 19800, "yearly", "2026-08-06", "#CDEB7B", "K", "年度会员", 7],
-  ["Notion", "效率工具", 7200, "monthly", "2026-08-12", "#D8D2C6", "N", "Plus 方案", 5],
-  ["Apple Music", "音乐", 1100, "monthly", "2026-08-18", "#FFC1D3", "♫", "个人方案", 3],
-];
-
 function db() {
   if (!env.DB) throw new Error("DB binding unavailable");
   return env.DB;
@@ -49,17 +40,6 @@ async function ensureDatabase() {
       created_at TEXT NOT NULL
     )`)
     .run();
-  const count = await database.prepare("SELECT COUNT(*) AS count FROM subscriptions").first<{ count: number }>();
-  if (!count?.count) {
-    const statements = seedRows.map((row) =>
-      database
-        .prepare(`INSERT INTO subscriptions
-          (name, category, amount_cents, billing_cycle, next_charge_date, color, mark, note, reminder_days, status, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`)
-        .bind(...row, new Date().toISOString())
-    );
-    await database.batch(statements);
-  }
 }
 
 export async function GET() {

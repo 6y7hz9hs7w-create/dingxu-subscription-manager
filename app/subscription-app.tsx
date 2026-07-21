@@ -16,14 +16,7 @@ type Subscription = {
   status: "active" | "cancel_pending";
 };
 
-const fallbackSubscriptions: Subscription[] = [
-  { id: 1, name: "爱奇艺 VIP", category: "影音娱乐", amount_cents: 2580, billing_cycle: "monthly", next_charge_date: "2026-07-23", color: "#FFE46B", mark: "爱", note: "连续包月", reminder_days: 2, status: "active" },
-  { id: 2, name: "iCloud+", category: "云存储", amount_cents: 2100, billing_cycle: "monthly", next_charge_date: "2026-07-26", color: "#B8DBFF", mark: "☁", note: "200GB", reminder_days: 3, status: "active" },
-  { id: 3, name: "网易云音乐", category: "音乐", amount_cents: 1800, billing_cycle: "monthly", next_charge_date: "2026-07-29", color: "#FFB9AE", mark: "音", note: "黑胶 VIP", reminder_days: 3, status: "active" },
-  { id: 4, name: "Keep", category: "健康运动", amount_cents: 19800, billing_cycle: "yearly", next_charge_date: "2026-08-06", color: "#CDEB7B", mark: "K", note: "年度会员", reminder_days: 7, status: "active" },
-  { id: 5, name: "Notion", category: "效率工具", amount_cents: 7200, billing_cycle: "monthly", next_charge_date: "2026-08-12", color: "#D8D2C6", mark: "N", note: "Plus 方案", reminder_days: 5, status: "active" },
-  { id: 6, name: "Apple Music", category: "音乐", amount_cents: 1100, billing_cycle: "monthly", next_charge_date: "2026-08-18", color: "#FFC1D3", mark: "♫", note: "个人方案", reminder_days: 3, status: "active" },
-];
+const fallbackSubscriptions: Subscription[] = [];
 
 const categories = ["全部", "影音娱乐", "音乐", "效率工具", "云存储", "健康运动"];
 const colorOptions = ["#FFE46B", "#B8DBFF", "#FFB9AE", "#CDEB7B", "#D8D2C6", "#FFC1D3"];
@@ -58,7 +51,7 @@ export default function SubscriptionApp() {
       const data = await response.json() as { subscriptions: Subscription[] };
       setSubscriptions(data.subscriptions);
     } catch {
-      setToast("当前显示演示数据，稍后会自动同步");
+      setToast("暂时无法读取订阅，请稍后再试");
     } finally {
       setLoading(false);
     }
@@ -145,7 +138,7 @@ export default function SubscriptionApp() {
         <div className="side-bottom">
           <div className="tip-card"><span>省</span><strong>理性订阅</strong><p>每月复盘一次，钱要花在值得的地方。</p></div>
           <button className="ghost-nav"><span>⚙</span>设置</button>
-          <div className="profile"><span>许</span><div><strong>许同学</strong><small>个人账户</small></div><b>···</b></div>
+          <div className="profile"><span>我</span><div><strong>我的账户</strong><small>个人空间</small></div><b>···</b></div>
         </div>
       </aside>
 
@@ -159,15 +152,15 @@ export default function SubscriptionApp() {
 
         <div className="page-wrap">
           <section id="overview" className="hero-row">
-            <div><p className="eyebrow">TUESDAY · 7月21日</p><h1>下午好，许同学 <span>☀</span></h1><p>你的订阅都在掌控中。未来 7 天有 <strong>{upcoming.length} 笔</strong>即将续费。</p></div>
+            <div><p className="eyebrow">TUESDAY · 7月21日</p><h1>下午好 <span>☀</span></h1><p>{subscriptions.length ? <>你的订阅都在掌控中。未来 7 天有 <strong>{upcoming.length} 笔</strong>即将续费。</> : <>这里还没有订阅记录，添加第一项开始管理。</>}</p></div>
             <div className="month-switch"><button aria-label="上个月">‹</button><span>2026年 7月</span><button aria-label="下个月">›</button></div>
           </section>
 
           <section className="stats-grid" aria-label="订阅数据概览">
-            <article className="stat-card primary"><div className="stat-top"><span>本月订阅支出</span><b>¥</b></div><strong>{money(monthlyCost)}</strong><div className="stat-foot"><span>较上月 <em>↓ 8.6%</em></span><i>预算 ¥500</i></div><div className="budget-track"><span style={{ width: `${Math.min(monthlyCost / 50000 * 100, 100)}%` }} /></div></article>
+            <article className="stat-card primary"><div className="stat-top"><span>本月订阅支出</span><b>¥</b></div><strong>{money(monthlyCost)}</strong><div className="stat-foot"><span>{subscriptions.length ? "按当前订阅计算" : "添加订阅后自动统计"}</span><i>{active.length} 项生效中</i></div><div className="budget-track"><span style={{ width: subscriptions.length ? "18%" : "0%" }} /></div></article>
             <article className="stat-card"><div className="stat-top"><span>年度预估</span><b className="peach">↗</b></div><strong>{money(yearlyCost)}</strong><div className="stat-foot"><span>共 {active.length} 项生效中</span><i>¥{Math.round(yearlyCost / 100 / 365)}/天</i></div></article>
             <article className="stat-card"><div className="stat-top"><span>7 天内将扣款</span><b className="yellow">!</b></div><strong>{money(upcomingTotal)}</strong><div className="stat-foot"><span>{upcoming.length ? `最近：${dateLabel(upcoming[0].next_charge_date)}` : "暂无扣款"}</span><i className="warning">需留意</i></div></article>
-            <article className="stat-card saving"><div className="stat-top"><span>本月可省</span><b className="mint">叶</b></div><strong>{money(potentialSaving)}</strong><div className="stat-foot"><span>来自智能建议</span><button onClick={() => document.getElementById("insights")?.scrollIntoView({ behavior: "smooth" })}>查看建议 →</button></div></article>
+            <article className="stat-card saving"><div className="stat-top"><span>本月可省</span><b className="mint">叶</b></div><strong>{money(potentialSaving)}</strong><div className="stat-foot"><span>{subscriptions.length ? "来自智能建议" : "暂无分析数据"}</span>{subscriptions.length > 0 && <button onClick={() => document.getElementById("insights")?.scrollIntoView({ behavior: "smooth" })}>查看建议 →</button>}</div></article>
           </section>
 
           <section id="calendar" className="content-grid">
@@ -182,7 +175,7 @@ export default function SubscriptionApp() {
                     <div className="renew-price"><strong>{money(item.amount_cents)}</strong><span>/{item.billing_cycle === "yearly" ? "年" : "月"}</span></div>
                     <button className="more" aria-label={`管理${item.name}`} onClick={() => void act(item.id, "renew")} disabled={busy}>续</button>
                   </div>
-                )) : <div className="empty-mini">未来 7 天没有扣款，安心享受吧。</div>}
+                )) : <div className="empty-mini"><span>○</span><strong>{subscriptions.length ? "未来 7 天没有扣款" : "还没有续费计划"}</strong><p>{subscriptions.length ? "安心享受当前订阅吧。" : "添加订阅后，续费日会集中显示在这里。"}</p>{!subscriptions.length && <button onClick={() => setShowAdd(true)}>添加第一项订阅</button>}</div>}
               </div>
               {upcoming.length > 0 && <div className="reminder-note"><span>铃</span><p><strong>续费提醒已开启</strong>，我们会在扣款前 {Math.min(...upcoming.map((i) => i.reminder_days))} 天再次提醒你。</p><button>管理提醒</button></div>}
             </article>
@@ -191,11 +184,11 @@ export default function SubscriptionApp() {
               <div className="panel-title"><div><p className="eyebrow">INSIGHTS</p><h2>花在哪里</h2></div><button>本月⌄</button></div>
               <div className="spend-total"><span>月均订阅</span><strong>{money(monthlyCost)}</strong></div>
               <div className="bars">
-                {categorySpend.map(([category, amount], index) => (
+                {categorySpend.length ? categorySpend.map(([category, amount], index) => (
                   <div className="bar-row" key={category}><span>{category}</span><div><i style={{ width: `${Math.max(amount / categorySpend[0][1] * 100, 10)}%`, background: ["#28604F", "#F2C84B", "#EE8C74", "#9DC7E8"][index] }} /></div><strong>{money(Math.round(amount))}</strong></div>
-                ))}
+                )) : <div className="empty-bars"><i /><i /><i /><span>添加订阅后查看消费分布</span></div>}
               </div>
-              <div className="insight-callout"><span>✦</span><div><strong>小续发现</strong><p>影音与效率工具占支出较高，定期检查使用频率，预计每月可省 {money(potentialSaving)}。</p></div></div>
+              <div className="insight-callout"><span>✦</span><div><strong>小续发现</strong><p>{subscriptions.length ? <>定期检查使用频率，预计每月可省 {money(potentialSaving)}。</> : <>至少添加 2 项订阅后，这里会给出更有价值的节省建议。</>}</p></div></div>
             </article>
           </section>
 
@@ -204,7 +197,7 @@ export default function SubscriptionApp() {
             <div className="filter-row" role="tablist" aria-label="订阅分类">
               {categories.map((category) => <button key={category} className={filter === category ? "active" : ""} onClick={() => setFilter(category)}>{category}</button>)}
             </div>
-            <div className={`subscription-grid ${loading ? "is-loading" : ""}`}>
+            <div className={`subscription-grid ${loading ? "is-loading" : ""} ${!filtered.length ? "is-empty" : ""}`}>
               {filtered.map((item) => (
                 <article className={`subscription-card ${item.status === "cancel_pending" ? "cancelled" : ""}`} key={item.id}>
                   <div className="card-top"><div className="service-mark large" style={{ background: item.color }}>{item.mark}</div><button aria-label={`更多${item.name}`}>···</button></div>
@@ -218,7 +211,7 @@ export default function SubscriptionApp() {
                   </div>
                 </article>
               ))}
-              <button className="add-card" onClick={() => setShowAdd(true)}><span>＋</span><strong>添加新订阅</strong><small>记录下一笔会员服务</small></button>
+              <button className="add-card" onClick={() => setShowAdd(true)}><span>＋</span><strong>{subscriptions.length ? "添加新订阅" : "从第一项订阅开始"}</strong><small>{subscriptions.length ? "记录下一笔会员服务" : "记录服务、金额和续费日期"}</small></button>
             </div>
           </section>
         </div>
