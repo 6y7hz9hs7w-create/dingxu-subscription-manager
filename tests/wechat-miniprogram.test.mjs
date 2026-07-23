@@ -5,7 +5,7 @@ import test from "node:test";
 const root = new URL("../wechat-miniprogram/", import.meta.url);
 
 test("WeChat mini program uses server-owned silent identity", async () => {
-  const [projectText, appText, appConfigText, cloudConfigText, serviceText, cloudText, packageText, indexText, calendarText, insightsText, settingsText] = await Promise.all([
+  const [projectText, appText, appConfigText, cloudConfigText, serviceText, cloudText, packageText, indexText, addText, addLogicText, catalogText, calendarText, insightsText, settingsText] = await Promise.all([
     readFile(new URL("project.config.json", root), "utf8"),
     readFile(new URL("miniprogram/app.js", root), "utf8"),
     readFile(new URL("miniprogram/app.json", root), "utf8"),
@@ -14,6 +14,9 @@ test("WeChat mini program uses server-owned silent identity", async () => {
     readFile(new URL("cloudfunctions/subscriptionService/index.js", root), "utf8"),
     readFile(new URL("cloudfunctions/subscriptionService/package.json", root), "utf8"),
     readFile(new URL("miniprogram/pages/index/index.wxml", root), "utf8"),
+    readFile(new URL("miniprogram/pages/add/add.wxml", root), "utf8"),
+    readFile(new URL("miniprogram/pages/add/add.js", root), "utf8"),
+    readFile(new URL("miniprogram/utils/serviceCatalog.js", root), "utf8"),
     readFile(new URL("miniprogram/pages/calendar/calendar.wxml", root), "utf8"),
     readFile(new URL("miniprogram/pages/insights/insights.wxml", root), "utf8"),
     readFile(new URL("miniprogram/pages/settings/settings.wxml", root), "utf8"),
@@ -36,6 +39,12 @@ test("WeChat mini program uses server-owned silent identity", async () => {
   assert.match(cloudText, /current\.data\.ownerOpenid !== ownerOpenid/);
   assert.doesNotMatch(cloudText + appText + serviceText, /AppSecret|appsecret|getPhoneNumber|phoneNumber/);
   assert.match(indexText, /添加订阅/);
+  assert.match(addText, /serviceOptions/);
+  assert.match(addText, /customService/);
+  assert.match(addLogicText, /optionsForCategory/);
+  assert.match(catalogText, /腾讯视频/);
+  assert.match(catalogText, /网易云音乐/);
+  assert.match(catalogText, /ChatGPT Plus/);
   assert.match(calendarText, /续费日历/);
   assert.match(insightsText, /消费分析/);
   assert.match(settingsText, /无感登录已开启/);

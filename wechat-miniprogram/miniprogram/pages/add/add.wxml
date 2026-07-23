@@ -6,8 +6,14 @@
   </view>
 
   <form class="form-panel panel" bindsubmit="submit">
-    <label class="field"><text>服务名称</text><input name="name" maxlength="60" placeholder="例如：腾讯视频 VIP" /></label>
     <label class="field"><text>订阅分类</text><picker range="{{categories}}" value="{{categoryIndex}}" bindchange="changeCategory"><view class="picker-value">{{categories[categoryIndex]}} <text>›</text></view></picker></label>
+    <label class="field">
+      <text>服务名称</text>
+      <picker range="{{serviceOptions}}" value="{{serviceIndex}}" bindchange="changeService">
+        <view class="picker-value {{serviceIndex === 0 ? 'picker-placeholder' : ''}}">{{serviceOptions[serviceIndex]}} <text>›</text></view>
+      </picker>
+      <input wx:if="{{customService}}" class="custom-service-input" value="{{serviceName}}" bindinput="changeServiceName" maxlength="60" placeholder="请输入服务名称" />
+    </label>
     <label class="field"><text>订阅金额</text><view class="money-input"><text>¥</text><input name="amount" type="digit" placeholder="0.00" /></view></label>
     <label class="field"><text>账单周期</text><picker range="{{billingCycles}}" value="{{billingIndex}}" bindchange="changeBilling"><view class="picker-value">{{billingCycles[billingIndex]}} <text>›</text></view></picker></label>
     <label class="field"><text>下次续费</text><picker mode="date" value="{{nextChargeDate}}" bindchange="changeDate"><view class="picker-value">{{nextChargeDate}} <text>›</text></view></picker></label>
