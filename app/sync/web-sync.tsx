@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import styles from "./sync.module.css";
 
 type User = { nickname?: string; idHint?: string; profileComplete?: boolean };
@@ -182,24 +181,26 @@ export default function WebSync() {
       <div className={styles.orbTwo} aria-hidden="true" />
       <section className={styles.card}>
         <header className={styles.header}>
-          <Link className={styles.brand} href="/" aria-label="返回订序首页"><span aria-hidden="true">序</span><strong>订序</strong></Link>
-          {user ? <button className={styles.logout} onClick={logout} disabled={busy}>解除本机绑定</button> : <span className={styles.secure}>安全绑定</span>}
+          <a className={styles.brand} href="/" aria-label="返回订序首页"><span aria-hidden="true">序</span><strong>订序</strong></a>
+          <div className={styles.headerActions}>
+            <span className={styles.secure}><i aria-hidden="true" />{user ? "微信数据已连接" : "安全绑定"}</span>
+            {user ? <button className={styles.logout} onClick={logout} disabled={busy}>解除绑定</button> : null}
+          </div>
         </header>
 
         {user ? (
           <div className={styles.dashboard}>
             <div className={styles.welcomeRow}>
               <div className={styles.welcome}>
-                <span className={styles.kicker}>微信云端已同步</span>
-                <h1>{user.nickname || "微信用户"}的订阅</h1>
-                <p>网页与小程序读取同一份云端数据，续费状态会即时同步。</p>
+                <h1>{user.nickname || "微信用户"}的订阅账本</h1>
+                <p>把每月固定支出、续费日期和处理状态放在同一本账里。</p>
               </div>
-              <button className={styles.exportButton} onClick={exportCsv}>导出 CSV</button>
+              <button className={styles.exportButton} onClick={exportCsv}>导出账单</button>
             </div>
             <div className={styles.metrics}>
-              <article><span>全部订阅</span><strong>{visibleSubscriptions.length}</strong><small>项记录</small></article>
-              <article><span>生效中</span><strong>{subscriptions.filter((item) => item.status === "active").length}</strong><small>项服务</small></article>
-              <article><span>月均支出</span><strong>{money(Math.round(monthlyCents))}</strong><small>按年付折算</small></article>
+              <article><span>月均订阅支出</span><strong>{money(Math.round(monthlyCents))}</strong><small>年付项目已平均到每月</small></article>
+              <article><span>生效中</span><strong>{subscriptions.filter((item) => item.status === "active").length}</strong><small>项持续扣款</small></article>
+              <article><span>全部记录</span><strong>{visibleSubscriptions.length}</strong><small>项订阅</small></article>
             </div>
             <nav className={styles.tabs} aria-label="网页功能">
               {(["subscriptions", "calendar", "analysis"] as View[]).map((item) => (
@@ -210,12 +211,12 @@ export default function WebSync() {
             </nav>
 
             {view === "subscriptions" ? <>
-              <div className={styles.listHead}><div><span>SUBSCRIPTIONS</span><h2>我的订阅</h2></div><span>{subscriptions.length} 项</span></div>
+              <div className={styles.listHead}><div><h2>订阅流水</h2><p>按服务核对金额、日期与当前状态</p></div><span>{subscriptions.length} 项</span></div>
               <div className={styles.list}>
                 {subscriptions.length ? subscriptions.map((item) => (
-                  <article key={item._id || item.name} className={styles.item}>
+                  <article key={item._id || item.name} className={styles.item} data-status={item.status || "unknown"}>
                     <div className={styles.itemMain}>
-                      <div className={styles.serviceIcon} aria-hidden="true"><span /></div>
+                      <div className={styles.serviceIcon} aria-hidden="true">{(item.name || "订").slice(0, 1)}</div>
                       <div><strong>{item.name || "未命名订阅"}</strong><span>{item.category || "其他"} · {dateLabel(item.nextChargeDate)}</span></div>
                       <div className={styles.itemPrice}><strong>{money(Number(item.amountCents || 0))}</strong><span className={styles.status}>{statusLabel(item.status)}</span></div>
                     </div>
@@ -227,18 +228,18 @@ export default function WebSync() {
                   </article>
                 )) : <div className={styles.empty}>小程序里还没有订阅，添加后会在这里同步显示。</div>}
               </div>
-              <aside className={styles.readonly}><strong>提醒授权仍在小程序完成</strong><span>网页可以管理续费状态；新增订阅、编辑资料和微信提醒授权请继续使用小程序。</span></aside>
+              <aside className={styles.readonly}><span aria-hidden="true">提示</span><div><strong>微信提醒仍需在小程序授权</strong><p>网页可以处理续费状态；新增订阅、编辑资料和提醒授权请继续使用小程序。</p></div></aside>
             </> : null}
 
             {view === "calendar" ? <section className={styles.panel}>
-              <div className={styles.panelHead}><span>RENEWAL CALENDAR</span><h2>接下来的续费</h2></div>
+              <div className={styles.panelHead}><h2>接下来的续费</h2><p>按日期查看即将发生的订阅账目</p></div>
               <div className={styles.timeline}>{calendarData.length ? calendarData.map((item) => <article key={item._id || item.name}>
                 <time>{dateLabel(item.nextChargeDate)}</time><div><strong>{item.name}</strong><span>{item.category || "其他"} · {statusLabel(item.status)}</span></div><b>{money(Number(item.amountCents || 0))}</b>
               </article>) : <div className={styles.empty}>暂无续费安排</div>}</div>
             </section> : null}
 
             {view === "analysis" ? <section className={styles.panel}>
-              <div className={styles.panelHead}><span>SPENDING INSIGHTS</span><h2>每月的钱花在哪</h2></div>
+              <div className={styles.panelHead}><h2>每月的钱花在哪</h2><p>按月均口径查看分类占比</p></div>
               <div className={styles.analysisHero}><div><span>月均支出</span><strong>{money(Math.round(monthlyCents))}</strong></div><div><span>一年预计</span><strong>{money(Math.round(monthlyCents * 12))}</strong></div></div>
               <div className={styles.breakdown}>{categoryData.length ? categoryData.map(([category, cents]) => {
                 const percent = monthlyCents ? Math.round(cents / monthlyCents * 100) : 0;
@@ -250,9 +251,11 @@ export default function WebSync() {
           </div>
         ) : (
           <div className={styles.bind}>
-            <span className={styles.kicker}>微信数据同步</span>
-            <h1>把小程序里的订阅，带到网页上</h1>
-            <p className={styles.lead}>无需填写微信账号或密码。生成一次性绑定码，再到小程序“我的”页面确认即可。</p>
+            <div className={styles.bindIntro}>
+              <span className={styles.bindStamp}>微信同步</span>
+              <h1>把小程序里的订阅，带到网页上</h1>
+              <p className={styles.lead}>无需填写微信账号或密码。生成一次性绑定码，再到小程序“我的”页面确认即可。</p>
+            </div>
             <ol className={styles.steps}>
               <li><span>1</span><div><strong>生成绑定码</strong><small>绑定码仅 10 分钟有效</small></div></li>
               <li><span>2</span><div><strong>打开小程序 → 我的 → 绑定网页版</strong><small>输入并确认这组 8 位数字</small></div></li>

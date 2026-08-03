@@ -59,13 +59,15 @@ test("web sync uses a WeChat-confirmed server session without exposing OPENID", 
   assert.match(client, /订阅管理/);
   assert.match(client, /续费日历/);
   assert.match(client, /消费分析/);
-  assert.match(client, /导出 CSV/);
+  assert.match(client, /导出账单/);
+  assert.match(client, /月均订阅支出/);
+  assert.match(client, /订阅流水/);
   assert.match(api, /updateStatus/);
   assert.match(api, /delete/);
   assert.match(api, /httpOnly: true/);
   assert.match(api, /sameSite: "strict"/);
   assert.match(api, /CLOUDBASE_SYNC_SECRET/);
   assert.doesNotMatch(client + api, /ownerOpenid|OPENID/);
-  assert.match(styles, /@media \(max-width:620px\)/);
+  assert.match(styles, /@media \(max-width: 760px\)/);
   assert.match(styles, /prefers-reduced-motion/);
 });
