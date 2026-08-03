@@ -204,13 +204,13 @@ export default function WebSync() {
             </div>
             <nav className={styles.tabs} aria-label="网页功能">
               {(["subscriptions", "calendar", "analysis"] as View[]).map((item) => (
-                <button key={item} className={view === item ? styles.activeTab : ""} onClick={() => setView(item)}>
+                <button key={item} aria-pressed={view === item} className={view === item ? styles.activeTab : ""} onClick={() => setView(item)}>
                   {{ subscriptions: "订阅管理", calendar: "续费日历", analysis: "消费分析" }[item]}
                 </button>
               ))}
             </nav>
 
-            {view === "subscriptions" ? <>
+            {view === "subscriptions" ? <section className={styles.viewStage}>
               <div className={styles.listHead}><div><h2>订阅流水</h2><p>按服务核对金额、日期与当前状态</p></div><span>{subscriptions.length} 项</span></div>
               <div className={styles.list}>
                 {subscriptions.length ? subscriptions.map((item) => (
@@ -229,16 +229,16 @@ export default function WebSync() {
                 )) : <div className={styles.empty}>小程序里还没有订阅，添加后会在这里同步显示。</div>}
               </div>
               <aside className={styles.readonly}><span aria-hidden="true">提示</span><div><strong>微信提醒仍需在小程序授权</strong><p>网页可以处理续费状态；新增订阅、编辑资料和提醒授权请继续使用小程序。</p></div></aside>
-            </> : null}
+            </section> : null}
 
-            {view === "calendar" ? <section className={styles.panel}>
+            {view === "calendar" ? <section className={`${styles.panel} ${styles.viewStage}`}>
               <div className={styles.panelHead}><h2>接下来的续费</h2><p>按日期查看即将发生的订阅账目</p></div>
               <div className={styles.timeline}>{calendarData.length ? calendarData.map((item) => <article key={item._id || item.name}>
                 <time>{dateLabel(item.nextChargeDate)}</time><div><strong>{item.name}</strong><span>{item.category || "其他"} · {statusLabel(item.status)}</span></div><b>{money(Number(item.amountCents || 0))}</b>
               </article>) : <div className={styles.empty}>暂无续费安排</div>}</div>
             </section> : null}
 
-            {view === "analysis" ? <section className={styles.panel}>
+            {view === "analysis" ? <section className={`${styles.panel} ${styles.viewStage}`}>
               <div className={styles.panelHead}><h2>每月的钱花在哪</h2><p>按月均口径查看分类占比</p></div>
               <div className={styles.analysisHero}><div><span>月均支出</span><strong>{money(Math.round(monthlyCents))}</strong></div><div><span>一年预计</span><strong>{money(Math.round(monthlyCents * 12))}</strong></div></div>
               <div className={styles.breakdown}>{categoryData.length ? categoryData.map(([category, cents]) => {
