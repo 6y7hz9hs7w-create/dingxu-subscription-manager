@@ -85,7 +85,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json().catch(() => ({}))) as { action?: string };
+  const body = (await request.json().catch(() => ({}))) as {
+    action?: string;
+    id?: string;
+    operation?: string;
+    snoozeDays?: number;
+  };
   const store = await cookies();
   try {
     if (body.action === "createBinding") {
@@ -126,6 +131,26 @@ export async function POST(request: NextRequest) {
       response.cookies.delete(SESSION_COOKIE);
       response.cookies.delete(BINDING_COOKIE);
       return response;
+    }
+    if (["updateStatus", "delete"].includes(body.action || "")) {
+      const sessionToken = store.get(SESSION_COOKIE)?.value;
+      if (!sessionToken) return NextResponse.json({ error: "请先绑定微信数据" }, { status: 401 });
+      const result = await callCloud({
+        action: "session",
+        sessionToken,
+        request: {
+          action: body.action,
+          id: body.id,
+          operation: body.operation,
+          snoozeDays: body.snoozeDays,
+        },
+      });
+      if (!result.ok) {
+        const response = NextResponse.json({ error: result.error || "操作失败" }, { status: result.authExpired ? 401 : 400 });
+        if (result.authExpired) response.cookies.delete(SESSION_COOKIE);
+        return response;
+      }
+      return NextResponse.json(result);
     }
     return NextResponse.json({ error: "不支持的操作" }, { status: 400 });
   } catch (error) {

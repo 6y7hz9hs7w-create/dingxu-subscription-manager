@@ -24,12 +24,20 @@ type SyncData = {
   user?: User | null;
 };
 
+type View = "subscriptions" | "calendar" | "analysis";
+
 function money(cents: number) {
   return new Intl.NumberFormat("zh-CN", { style: "currency", currency: "CNY", maximumFractionDigits: 2 }).format(cents / 100);
 }
 
 function statusLabel(status?: string) {
   return ({ active: "生效中", paused: "已暂停", cancel_pending: "计划取消", pending_confirmation: "待确认", archived: "已归档" } as Record<string, string>)[status || ""] || "未分类";
+}
+
+function dateLabel(value?: string) {
+  if (!value) return "未设置日期";
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "short" });
 }
 
 export default function WebSync() {
@@ -41,6 +49,8 @@ export default function WebSync() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
+  const [view, setView] = useState<View>("subscriptions");
+  const [actionBusy, setActionBusy] = useState("");
 
   const applyAuthenticated = useCallback((data: SyncData) => {
     setUser(data.user || null);
@@ -64,11 +74,11 @@ export default function WebSync() {
     .filter((item) => item.status === "active")
     .reduce((sum, item) => sum + Number(item.amountCents || 0) / (item.billingCycle === "yearly" ? 12 : 1), 0), [subscriptions]);
 
-  async function post(action: string) {
+  async function post(action: string, payload: Record<string, unknown> = {}) {
     const response = await fetch("/api/cloud-sync", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ action, ...payload }),
     });
     const data = (await response.json()) as SyncData;
     if (!response.ok || data.error) throw new Error(data.error || "操作失败");
@@ -111,6 +121,59 @@ export default function WebSync() {
     setBusy(false);
   }
 
+  async function manage(id: string | undefined, operation: string) {
+    if (!id || actionBusy) return;
+    const warning = ({
+      renew: "确认已经完成续费，并将续费日顺延到下一周期？",
+      cancel: "确认将这项订阅标记为计划取消？这不会替你关闭服务商的自动续费。",
+      delete: "确认永久删除这项记录？删除后无法恢复。",
+    } as Record<string, string>)[operation];
+    if (warning && !window.confirm(warning)) return;
+    setActionBusy(id + operation);
+    setError("");
+    try {
+      const data = operation === "delete"
+        ? await post("delete", { id })
+        : await post("updateStatus", { id, operation });
+      setSubscriptions(data.subscriptions || []);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "操作失败");
+    } finally {
+      setActionBusy("");
+    }
+  }
+
+  function exportCsv() {
+    const rows = [["服务名称", "分类", "金额（元）", "周期", "下次续费", "状态"], ...subscriptions.map((item) => [
+      item.name || "",
+      item.category || "其他",
+      (Number(item.amountCents || 0) / 100).toFixed(2),
+      item.billingCycle === "yearly" ? "每年" : "每月",
+      item.nextChargeDate || "",
+      statusLabel(item.status),
+    ])];
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `订序订阅-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const visibleSubscriptions = useMemo(() => subscriptions.filter((item) => item.status !== "archived"), [subscriptions]);
+  const categoryData = useMemo(() => {
+    const totals = new Map<string, number>();
+    visibleSubscriptions.filter((item) => item.status === "active").forEach((item) => {
+      const monthly = Number(item.amountCents || 0) / (item.billingCycle === "yearly" ? 12 : 1);
+      totals.set(item.category || "其他", (totals.get(item.category || "其他") || 0) + monthly);
+    });
+    return [...totals].sort((a, b) => b[1] - a[1]);
+  }, [visibleSubscriptions]);
+  const calendarData = useMemo(() => visibleSubscriptions
+    .filter((item) => item.nextChargeDate)
+    .sort((a, b) => String(a.nextChargeDate).localeCompare(String(b.nextChargeDate))), [visibleSubscriptions]);
+
   if (!ready) return <main className={styles.shell}><section className={styles.loading}>正在检查微信数据连接…</section></main>;
 
   return (
@@ -125,27 +188,65 @@ export default function WebSync() {
 
         {user ? (
           <div className={styles.dashboard}>
-            <div className={styles.welcome}>
-              <span className={styles.kicker}>微信云端已同步</span>
-              <h1>{user.nickname || "微信用户"}的订阅</h1>
-              <p>这里读取的是小程序当前微信身份下的同一份数据，不会再建立第二份账本。</p>
+            <div className={styles.welcomeRow}>
+              <div className={styles.welcome}>
+                <span className={styles.kicker}>微信云端已同步</span>
+                <h1>{user.nickname || "微信用户"}的订阅</h1>
+                <p>网页与小程序读取同一份云端数据，续费状态会即时同步。</p>
+              </div>
+              <button className={styles.exportButton} onClick={exportCsv}>导出 CSV</button>
             </div>
             <div className={styles.metrics}>
-              <article><span>全部订阅</span><strong>{subscriptions.filter((item) => item.status !== "archived").length}</strong><small>项记录</small></article>
+              <article><span>全部订阅</span><strong>{visibleSubscriptions.length}</strong><small>项记录</small></article>
               <article><span>生效中</span><strong>{subscriptions.filter((item) => item.status === "active").length}</strong><small>项服务</small></article>
               <article><span>月均支出</span><strong>{money(Math.round(monthlyCents))}</strong><small>按年付折算</small></article>
             </div>
-            <div className={styles.listHead}><div><span>同步预览</span><h2>我的订阅</h2></div><span>{subscriptions.length} 项</span></div>
-            <div className={styles.list}>
-              {subscriptions.length ? subscriptions.map((item) => (
-                <article key={item._id || item.name} className={styles.item}>
-                  <div className={styles.serviceIcon} aria-hidden="true"><span /></div>
-                  <div><strong>{item.name || "未命名订阅"}</strong><span>{item.category || "其他"} · {item.nextChargeDate || "未设置日期"}</span></div>
-                  <div><strong>{money(Number(item.amountCents || 0))}</strong><span className={styles.status}>{statusLabel(item.status)}</span></div>
-                </article>
-              )) : <div className={styles.empty}>小程序里还没有订阅，添加后会在这里同步显示。</div>}
-            </div>
-            <aside className={styles.readonly}><strong>第一阶段：安全同步预览</strong><span>为避免误写数据，网页编辑、日历、分析和导出会在下一阶段接入；目前请在小程序完成管理操作。</span></aside>
+            <nav className={styles.tabs} aria-label="网页功能">
+              {(["subscriptions", "calendar", "analysis"] as View[]).map((item) => (
+                <button key={item} className={view === item ? styles.activeTab : ""} onClick={() => setView(item)}>
+                  {{ subscriptions: "订阅管理", calendar: "续费日历", analysis: "消费分析" }[item]}
+                </button>
+              ))}
+            </nav>
+
+            {view === "subscriptions" ? <>
+              <div className={styles.listHead}><div><span>SUBSCRIPTIONS</span><h2>我的订阅</h2></div><span>{subscriptions.length} 项</span></div>
+              <div className={styles.list}>
+                {subscriptions.length ? subscriptions.map((item) => (
+                  <article key={item._id || item.name} className={styles.item}>
+                    <div className={styles.itemMain}>
+                      <div className={styles.serviceIcon} aria-hidden="true"><span /></div>
+                      <div><strong>{item.name || "未命名订阅"}</strong><span>{item.category || "其他"} · {dateLabel(item.nextChargeDate)}</span></div>
+                      <div className={styles.itemPrice}><strong>{money(Number(item.amountCents || 0))}</strong><span className={styles.status}>{statusLabel(item.status)}</span></div>
+                    </div>
+                    <div className={styles.actions}>
+                      {item.status === "active" ? <><button disabled={Boolean(actionBusy)} onClick={() => manage(item._id, "pause")}>暂停</button><button disabled={Boolean(actionBusy)} onClick={() => manage(item._id, "renew")}>确认续费</button><button disabled={Boolean(actionBusy)} className={styles.danger} onClick={() => manage(item._id, "cancel")}>取消订阅</button></> : null}
+                      {item.status === "pending_confirmation" ? <><button disabled={Boolean(actionBusy)} onClick={() => manage(item._id, "renew")}>已续费</button><button disabled={Boolean(actionBusy)} className={styles.danger} onClick={() => manage(item._id, "cancel")}>已取消</button></> : null}
+                      {["paused", "cancel_pending", "archived"].includes(item.status || "") ? <><button disabled={Boolean(actionBusy)} onClick={() => manage(item._id, "restore")}>恢复订阅</button><button disabled={Boolean(actionBusy)} className={styles.danger} onClick={() => manage(item._id, "delete")}>永久删除</button></> : null}
+                    </div>
+                  </article>
+                )) : <div className={styles.empty}>小程序里还没有订阅，添加后会在这里同步显示。</div>}
+              </div>
+              <aside className={styles.readonly}><strong>提醒授权仍在小程序完成</strong><span>网页可以管理续费状态；新增订阅、编辑资料和微信提醒授权请继续使用小程序。</span></aside>
+            </> : null}
+
+            {view === "calendar" ? <section className={styles.panel}>
+              <div className={styles.panelHead}><span>RENEWAL CALENDAR</span><h2>接下来的续费</h2></div>
+              <div className={styles.timeline}>{calendarData.length ? calendarData.map((item) => <article key={item._id || item.name}>
+                <time>{dateLabel(item.nextChargeDate)}</time><div><strong>{item.name}</strong><span>{item.category || "其他"} · {statusLabel(item.status)}</span></div><b>{money(Number(item.amountCents || 0))}</b>
+              </article>) : <div className={styles.empty}>暂无续费安排</div>}</div>
+            </section> : null}
+
+            {view === "analysis" ? <section className={styles.panel}>
+              <div className={styles.panelHead}><span>SPENDING INSIGHTS</span><h2>每月的钱花在哪</h2></div>
+              <div className={styles.analysisHero}><div><span>月均支出</span><strong>{money(Math.round(monthlyCents))}</strong></div><div><span>一年预计</span><strong>{money(Math.round(monthlyCents * 12))}</strong></div></div>
+              <div className={styles.breakdown}>{categoryData.length ? categoryData.map(([category, cents]) => {
+                const percent = monthlyCents ? Math.round(cents / monthlyCents * 100) : 0;
+                return <article key={category}><div><strong>{category}</strong><span>{money(Math.round(cents))}/月 · {percent}%</span></div><i><b style={{ width: `${Math.max(percent, 2)}%` }} /></i></article>;
+              }) : <div className={styles.empty}>暂无生效中的订阅数据</div>}</div>
+            </section> : null}
+            {error ? <p className={styles.error} role="alert">{error}</p> : null}
+            {actionBusy ? <div className={styles.saving}>正在同步到微信云端…</div> : null}
           </div>
         ) : (
           <div className={styles.bind}>

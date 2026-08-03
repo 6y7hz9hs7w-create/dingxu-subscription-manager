@@ -45,3 +45,27 @@ test("subscription manager ships its core flows", async () => {
   assert.match(css, /@media \(max-width:620px\)/);
   assert.doesNotMatch(page + app + layout, /codex-preview|react-loading-skeleton|SkeletonPreview/);
 });
+
+test("web sync uses a WeChat-confirmed server session without exposing OPENID", async () => {
+  const [page, client, api, styles] = await Promise.all([
+    readFile(new URL("../app/sync/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/sync/web-sync.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/cloud-sync/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/sync/sync.module.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /WebSync/);
+  assert.match(client, /生成微信绑定码/);
+  assert.match(client, /小程序确认/);
+  assert.match(client, /订阅管理/);
+  assert.match(client, /续费日历/);
+  assert.match(client, /消费分析/);
+  assert.match(client, /导出 CSV/);
+  assert.match(api, /updateStatus/);
+  assert.match(api, /delete/);
+  assert.match(api, /httpOnly: true/);
+  assert.match(api, /sameSite: "strict"/);
+  assert.match(api, /CLOUDBASE_SYNC_SECRET/);
+  assert.doesNotMatch(client + api, /ownerOpenid|OPENID/);
+  assert.match(styles, /@media \(max-width:620px\)/);
+  assert.match(styles, /prefers-reduced-motion/);
+});
