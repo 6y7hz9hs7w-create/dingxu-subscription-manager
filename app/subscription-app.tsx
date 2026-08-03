@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 type Subscription = {
   id: number;
@@ -182,6 +183,7 @@ export default function SubscriptionApp({ user, signInPath, signOutPath }: Subsc
         <p className="auth-lead">登录后管理续费日期、消费分析与取消计划。每个账号的数据独立保存，其他人无法查看。</p>
         <div className="auth-points"><span><i>✓</i>按账号隔离数据</span><span><i>✓</i>跨设备同步</span><span><i>✓</i>随时安全退出</span></div>
         <a className="signin-button" href={signInPath}><b>◉</b>使用 ChatGPT 账号登录</a>
+        <Link className="wechat-sync-link" href="/sync">使用微信小程序数据同步 →</Link>
         <small>登录即表示仅授权“订序”识别你的账号，用于隔离订阅数据。</small>
       </section>
     </main>;
