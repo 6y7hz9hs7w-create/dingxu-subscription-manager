@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import styles from "./sync.module.css";
 
 type User = { nickname?: string; idHint?: string; profileComplete?: boolean };
@@ -181,7 +182,7 @@ export default function WebSync() {
       <div className={styles.orbTwo} aria-hidden="true" />
       <section className={styles.card}>
         <header className={styles.header}>
-          <a className={styles.brand} href="/" aria-label="返回订序首页"><span aria-hidden="true">序</span><strong>订序</strong></a>
+          <Link className={styles.brand} href="/" aria-label="返回订序首页"><span aria-hidden="true">序</span><strong>订序</strong></Link>
           <div className={styles.headerActions}>
             <span className={styles.secure}><i aria-hidden="true" />{user ? "微信数据已连接" : "安全绑定"}</span>
             {user ? <button className={styles.logout} onClick={logout} disabled={busy}>解除绑定</button> : null}

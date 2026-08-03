@@ -66,3 +66,191 @@ button { color:inherit; }
 @media (max-width:900px) { .sidebar { display:none; }.main-content { margin-left:0; }.topbar { padding:0 20px; }.mobile-brand { margin-right:auto; display:flex; align-items:center; gap:8px; font-weight:900; font-size:18px; }.mobile-brand .brand-mark { width:26px; height:27px; transform:scale(.8); transform-origin:left center; margin-right:-6px; }.content-grid { grid-template-columns:1fr; }.subscription-grid { grid-template-columns:repeat(2,1fr); }.page-wrap { padding-bottom:100px; }.mobile-nav { position:fixed; bottom:0; left:0; right:0; height:68px; background:rgba(255,254,250,.96); border-top:1px solid var(--line); z-index:20; display:grid; grid-template-columns:repeat(5,1fr); align-items:center; padding:0 12px max(0px,env(safe-area-inset-bottom)); backdrop-filter:blur(14px); }.mobile-nav a,.mobile-nav .nav-item { text-decoration:none; color:#84908a; display:grid; place-items:center; gap:2px; font-size:18px; background:transparent; border:0; box-shadow:none; width:auto; height:auto; border-radius:0; }.mobile-nav a span,.mobile-nav .nav-item span { font-size:8px; }.mobile-nav a.active,.mobile-nav .nav-item.active { color:var(--green); }.mobile-nav .mobile-add { width:46px; height:46px; margin:auto; border:0; border-radius:50%; background:var(--green); color:#fff; font-size:25px; box-shadow:0 6px 18px rgba(36,89,74,.28); cursor:pointer; }.toast { bottom:83px; white-space:nowrap; max-width:90%; }.modal-backdrop { align-items:end; padding:0; }.modal,.calendar-modal,.insights-modal,.account-modal { border-radius:20px 20px 0 0; max-height:92vh; } }
 @media (max-width:620px) { .auth-page { padding:23px 16px; }.auth-card { padding:35px 21px 30px; }.auth-card h1 { font-size:27px; }.auth-points { width:max-content; margin:0 auto 22px; display:grid; justify-content:start; }.topbar { height:64px; padding:0 16px; gap:8px; }.search { width:42px; padding:0; justify-content:center; }.search input { display:none; }.icon-button { display:none; }.top-account { width:40px; min-width:40px; padding:0; justify-content:center; }.top-account > div { display:none; }.top-account > span { width:32px; height:32px; }.add-button { width:40px; padding:0; font-size:0; }.add-button b { margin:0; font-size:22px; }.page-wrap { padding:28px 16px 94px; }.hero-row { align-items:start; margin-bottom:22px; }.hero-row h1 { font-size:25px; }.hero-row > div > p:last-child { line-height:1.5; }.month-switch { display:none; }.stats-grid { grid-template-columns:1fr 1fr; gap:9px; }.stat-card { min-height:135px; padding:15px 14px; }.stat-card > strong { font-size:25px; margin-top:15px; }.stat-foot { gap:5px; }.stat-foot i { display:none; }.panel { padding:17px 14px; }.content-grid { gap:10px; margin-bottom:30px; }.renew-item { gap:9px; }.renew-date { display:none; }.renew-price { width:60px; }.reminder-note button { display:none; }.section-head { align-items:center; }.outline-add { display:none; }.subscription-grid { grid-template-columns:1fr; gap:10px; }.subscription-card,.add-card { min-height:0; }.add-card { padding:28px 17px; }.modal form { grid-template-columns:1fr; padding:18px; gap:13px; }.modal label.full,.form-actions { grid-column:auto; }.modal-head,.account-head { padding:20px 18px 16px; }.form-actions { position:sticky; bottom:0; background:var(--white); padding:8px 0 0; }.form-actions button { flex:1; padding:0 10px; }.service-main { min-width:0; }.service-main span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }.insight-panel { order:-1; }.insights-head { padding:20px 18px 16px; }.insights-summary { grid-template-columns:1fr 1fr; padding:16px 18px 14px; }.insights-summary article:first-child { grid-column:1/-1; }.insights-breakdown { margin:0 18px; padding:15px; }.insights-row { grid-template-columns:8px 78px 1fr 50px; gap:7px; }.insights-advice { margin:13px 18px 0; }.insights-actions { position:sticky; bottom:0; background:var(--white); padding:15px 18px 18px; }.insights-actions button { flex:1; }.account-body { padding:16px 18px 20px; }.account-actions button,.account-actions a { flex:1; } }
 @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } * { animation:none!important; transition:none!important; } }
+
+/* 登录前后共用的「夜航账本」视觉系统。功能结构不变，只统一材质、层级与交互反馈。 */
+.app-shell {
+  --ink:#f7f7fb;
+  --green:#7048ff;
+  --deep:#090b10;
+  --paper:#050608;
+  --white:#0b0e14;
+  --line:rgba(255,255,255,.10);
+  --muted:#a4a6b2;
+  --yellow:#ffd35f;
+  --peach:#ff8d8d;
+  --mint:#6fe7be;
+  color-scheme:dark;
+  overflow-x:hidden;
+  color:var(--ink);
+  background:
+    radial-gradient(circle at 78% 14%,rgba(112,72,255,.13),transparent 26rem),
+    radial-gradient(circle at 20% 76%,rgba(255,55,111,.08),transparent 30rem),
+    var(--paper);
+  font-family:"Avenir Next","PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;
+}
+.app-shell .sidebar {
+  background:rgba(7,9,13,.97);
+  border-color:var(--line);
+  box-shadow:18px 0 55px rgba(0,0,0,.22);
+}
+.app-shell .brand { color:#fff; }
+.app-shell .brand-mark i { border-color:#9b83ff; }
+.app-shell .side-nav a,.app-shell .side-nav button,.app-shell .ghost-nav { color:#a7a9b6; transition:background .22s,color .22s,transform .22s; }
+.app-shell .side-nav a:hover,.app-shell .side-nav button:hover,.app-shell .ghost-nav:hover { color:#fff; background:rgba(255,255,255,.055); transform:translateX(2px); }
+.app-shell .side-nav a.active,.app-shell .side-nav button.active {
+  color:#fff;
+  background:linear-gradient(118deg,#7048ff,#8a48ff 58%,#d73f8f);
+  box-shadow:0 12px 30px rgba(112,72,255,.28);
+}
+.app-shell .tip-card { color:#fff; background:linear-gradient(145deg,rgba(112,72,255,.18),rgba(255,55,111,.08)); border-color:rgba(155,131,255,.25); }
+.app-shell .tip-card p,.app-shell .profile small { color:#a7a9b6; }
+.app-shell .tip-card > span { color:rgba(155,131,255,.12); }
+.app-shell .profile { color:#fff; border-color:var(--line); }
+.app-shell .profile > span,.app-shell .top-account > span { color:#fff; background:linear-gradient(145deg,#7048ff,#ff376f); }
+.app-shell .main-content { position:relative; isolation:isolate; background:transparent; }
+.app-shell .main-content::before {
+  content:"";
+  position:fixed;
+  inset:78px 0 0 224px;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 74% 8%,rgba(112,72,255,.10),transparent 32%),
+    radial-gradient(circle at 14% 72%,rgba(19,183,216,.055),transparent 28%);
+}
+.app-shell .topbar { color:#fff; background:rgba(5,6,8,.80); border-color:var(--line); backdrop-filter:blur(22px); }
+.app-shell .search,.app-shell .top-account,.app-shell .icon-button { color:#dcdeea; background:rgba(255,255,255,.055); border-color:var(--line); }
+.app-shell .search input { color:#fff; }
+.app-shell .search input::placeholder { color:#858895; }
+.app-shell .top-account small { color:#989aa6; }
+.app-shell .add-button,.app-shell .outline-add {
+  color:#fff;
+  border-color:transparent;
+  background:linear-gradient(118deg,#7048ff,#9250ff 58%,#ff376f);
+  box-shadow:0 11px 28px rgba(112,72,255,.25);
+  transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s;
+}
+.app-shell .add-button:hover,.app-shell .outline-add:hover { transform:translateY(-2px); box-shadow:0 16px 36px rgba(112,72,255,.34); }
+.app-shell .page-wrap { position:relative; }
+.app-shell .eyebrow { display:none; }
+.app-shell .hero-row { align-items:center; margin-bottom:30px; }
+.app-shell .hero-row h1,.app-shell .panel-title h2,.app-shell .section-head h2,
+.app-shell .modal-head h2,.app-shell .calendar-head h2,.app-shell .insights-head h2,.app-shell .account-head h2,
+.app-shell .calendar-toolbar strong,.app-shell .insights-section-title h3 {
+  color:#fff;
+  font-family:"Avenir Next","PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;
+}
+.app-shell .hero-row h1 { font-size:clamp(28px,3vw,42px); font-weight:800; letter-spacing:-.03em; }
+.app-shell .hero-row > div > p:last-child { color:#a7a9b6; font-size:14px; }
+.app-shell .hero-row p strong { color:#b8aaff; }
+.app-shell .day-signal { width:10px; height:10px; display:inline-block; margin-left:6px; border-radius:50%; background:#ffd35f; box-shadow:0 0 0 6px rgba(255,211,95,.10),0 0 24px rgba(255,211,95,.42); vertical-align:5px; }
+.app-shell .month-switch { color:#dfe0e8; background:rgba(255,255,255,.055); border:1px solid var(--line); }
+.app-shell .month-switch button:hover { color:#fff; background:rgba(255,255,255,.10); }
+.app-shell .stat-card,.app-shell .panel,.app-shell .subscription-card,.app-shell .add-card {
+  color:#f7f7fb;
+  background:rgba(11,14,20,.88);
+  border-color:var(--line);
+  box-shadow:0 18px 44px rgba(0,0,0,.18);
+  transition:transform .28s cubic-bezier(.16,1,.3,1),border-color .28s,box-shadow .28s;
+}
+.app-shell .stat-card:hover,.app-shell .panel:hover,.app-shell .subscription-card:hover { transform:translateY(-3px); border-color:rgba(155,131,255,.30); box-shadow:0 24px 54px rgba(0,0,0,.25); }
+.app-shell .stat-card.primary { background:radial-gradient(circle at 88% 10%,rgba(112,72,255,.34),transparent 52%),linear-gradient(145deg,#10131b,#090b10); border-color:rgba(155,131,255,.34); }
+.app-shell .stat-card.saving { background:linear-gradient(145deg,rgba(112,72,255,.16),rgba(11,14,20,.94)); border-color:rgba(112,72,255,.26); }
+.app-shell .stat-card > strong,.app-shell .spend-total strong,.app-shell .renew-price strong,.app-shell .bar-row strong,
+.app-shell .card-price strong,.app-shell .agenda-item > b,.app-shell .insights-summary strong,.app-shell .insights-row > b,.app-shell .account-stats strong {
+  color:#fff;
+  font-family:"Avenir Next","PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;
+  font-variant-numeric:tabular-nums;
+}
+.app-shell .stat-foot,.app-shell .primary .stat-foot,.app-shell .spend-total span,.app-shell .service-main span,
+.app-shell .renew-date span,.app-shell .renew-price span,.app-shell .service-meta,.app-shell .card-price span,.app-shell .card-date,
+.app-shell .panel-title > a,.app-shell .panel-title > button { color:#9da0ad; }
+.app-shell .stat-foot em { color:#6fe7be; }
+.app-shell .stat-foot button,.app-shell .panel-title > button { color:#b9adff; }
+.app-shell .stat-foot i.warning { color:#2d2300; background:#ffd35f; }
+.app-shell .renew-item,.app-shell .card-divider,.app-shell .agenda-item { border-color:var(--line); }
+.app-shell .service-main strong,.app-shell .service-name,.app-shell .card-date strong { color:#f8f8fb; }
+.app-shell .renew-date b { color:#ff8d8d; }
+.app-shell .more { color:#d8d9e3; background:rgba(255,255,255,.05); border-color:var(--line); }
+.app-shell .more:hover { color:#fff; background:#7048ff; }
+.app-shell .reminder-note,.app-shell .calendar-agenda { color:#d7d8e1; background:rgba(112,72,255,.10); }
+.app-shell .reminder-note > span { color:#c6bbff; background:rgba(112,72,255,.20); }
+.app-shell .reminder-note strong { color:#fff; }
+.app-shell .empty-mini,.app-shell .empty-bars span { color:#9699a6; }
+.app-shell .empty-mini > span,.app-shell .insights-empty > span,.app-shell .calendar-empty > span { color:#a99cff; border-color:rgba(169,156,255,.48); }
+.app-shell .empty-mini strong,.app-shell .insights-empty strong,.app-shell .calendar-empty strong { color:#e7e8ee; }
+.app-shell .empty-mini button { background:#7048ff; }
+.app-shell .bar-row > span { color:#b1b3bd; }
+.app-shell .bar-row > div,.app-shell .insights-track { background:rgba(255,255,255,.08); }
+.app-shell .insight-callout,.app-shell .insights-advice { background:rgba(255,55,111,.09); }
+.app-shell .insight-callout > span,.app-shell .insights-advice > span { color:#ffb6ca; background:rgba(255,55,111,.18); }
+.app-shell .insight-callout p,.app-shell .insights-advice p { color:#b9aeb6; }
+.app-shell .section-head h2 span { color:#c7c9d3; background:rgba(255,255,255,.08); }
+.app-shell .filter-row button { color:#adafbb; background:rgba(255,255,255,.035); border-color:var(--line); }
+.app-shell .filter-row button:hover { color:#fff; border-color:rgba(155,131,255,.35); }
+.app-shell .filter-row button.active { color:#fff; background:#7048ff; border-color:#7048ff; }
+.app-shell .subscription-card.cancelled { opacity:.76; background:rgba(255,55,111,.06); border-color:rgba(255,94,137,.22); }
+.app-shell .card-actions button { color:#d8d1ff; background:rgba(112,72,255,.12); border-color:rgba(155,131,255,.24); }
+.app-shell .card-actions button.danger { color:#ffb4b4; background:rgba(255,93,93,.08); border-color:rgba(255,116,116,.24); }
+.app-shell .add-card { color:#a8aab5; box-shadow:none; }
+.app-shell .add-card:hover { color:#fff; background:rgba(112,72,255,.07); border-color:rgba(155,131,255,.42); }
+.app-shell .add-card > span { border-color:rgba(169,156,255,.50); }
+.app-shell .add-card small { color:#858894; }
+
+.app-shell .modal-backdrop { background:rgba(0,0,0,.76); backdrop-filter:blur(8px); }
+.app-shell .modal,.app-shell .calendar-modal,.app-shell .insights-modal,.app-shell .account-modal {
+  color:#f7f7fb;
+  background:#0b0e14;
+  border:1px solid var(--line);
+  box-shadow:0 30px 90px rgba(0,0,0,.55);
+}
+.app-shell .modal-head,.app-shell .calendar-head,.app-shell .insights-head,.app-shell .account-head { border-color:var(--line); }
+.app-shell .modal-head div > span,.app-shell .calendar-head div > span,.app-shell .insights-head div > span,.app-shell .account-head div > span { color:#a1a4b0; }
+.app-shell .modal-head > button,.app-shell .calendar-head > button,.app-shell .insights-head > button,.app-shell .account-head > button { color:#dedfe7; background:rgba(255,255,255,.07); }
+.app-shell .modal label,.app-shell .color-picker legend { color:#d7d8e0; }
+.app-shell .modal input,.app-shell .modal select,.app-shell .color-picker > div {
+  color:#fff;
+  background:#11151d;
+  border-color:rgba(255,255,255,.12);
+}
+.app-shell .modal input:focus,.app-shell .modal select:focus { border-color:#8d70ff; box-shadow:0 0 0 3px rgba(112,72,255,.18); }
+.app-shell .form-actions button,.app-shell .calendar-actions button,.app-shell .insights-actions button,
+.app-shell .account-actions button,.app-shell .account-actions a { color:#e2e3ea; background:#12161e; border-color:var(--line); }
+.app-shell .form-actions .submit,.app-shell .calendar-actions button:last-child,.app-shell .insights-actions button:last-child { color:#fff; background:#7048ff; border-color:#7048ff; }
+.app-shell .calendar-toolbar button,.app-shell .calendar-day.has-renewal { color:#e5e6ec; background:#11151d; border-color:var(--line); }
+.app-shell .calendar-day.today { color:#c8bdff; background:rgba(112,72,255,.15); }
+.app-shell .calendar-week span,.app-shell .calendar-empty,.app-shell .agenda-title span,.app-shell .agenda-item > div span { color:#9699a5; }
+.app-shell .insights-summary article,.app-shell .insights-breakdown,.app-shell .account-stats div { background:#11151d; border-color:var(--line); }
+.app-shell .insights-summary article:first-child,.app-shell .account-profile { background:linear-gradient(145deg,#17112c,#0d1119); border-color:rgba(155,131,255,.28); }
+.app-shell .insights-summary span,.app-shell .insights-summary small,.app-shell .insights-section-title > span,
+.app-shell .insights-row > div:nth-child(2) span,.app-shell .account-stats span { color:#999ca8; }
+.app-shell .privacy-card { background:rgba(19,183,216,.08); }
+.app-shell .privacy-card > span { color:#7ae1f4; background:rgba(19,183,216,.16); }
+.app-shell .privacy-card p { color:#a7b9bd; }
+.app-shell .account-actions a { color:#ffb0b0; border-color:rgba(255,116,116,.24); background:rgba(255,93,93,.07); }
+.app-shell .toast { background:#161326; box-shadow:0 16px 44px rgba(0,0,0,.42); }
+.app-shell .toast span { color:#9f8cff; }
+.app-shell button:focus-visible,.app-shell a:focus-visible,.app-shell input:focus-visible,.app-shell select:focus-visible { outline:3px solid rgba(169,156,255,.76); outline-offset:3px; }
+
+@keyframes night-ledger-enter {
+  from { opacity:.01; transform:translateY(18px); filter:blur(8px); }
+  to { opacity:1; transform:translateY(0); filter:blur(0); }
+}
+.app-shell .page-wrap > section { animation:night-ledger-enter .72s cubic-bezier(.16,1,.3,1) both; }
+.app-shell .page-wrap > section:nth-child(2) { animation-delay:.07s; }
+.app-shell .page-wrap > section:nth-child(3) { animation-delay:.13s; }
+.app-shell .page-wrap > section:nth-child(4) { animation-delay:.18s; }
+
+@media (max-width:900px) {
+  .app-shell .main-content::before { inset:64px 0 0; }
+  .app-shell .mobile-nav { color:#a7a9b6; background:rgba(7,9,13,.94); border-color:var(--line); }
+  .app-shell .mobile-nav a,.app-shell .mobile-nav .nav-item { color:#9194a0; }
+  .app-shell .mobile-nav a.active,.app-shell .mobile-nav .nav-item.active { color:#b5a7ff; }
+  .app-shell .mobile-nav .mobile-add { background:linear-gradient(145deg,#7048ff,#ff376f); box-shadow:0 10px 28px rgba(112,72,255,.35); }
+}
+@media (max-width:620px) {
+  .app-shell .hero-row h1 { font-size:28px; }
+  .app-shell .stats-grid { grid-template-columns:1fr; }
+  .app-shell .stat-card { min-height:126px; }
+  .app-shell .form-actions,.app-shell .insights-actions { background:#0b0e14; }
+}

@@ -34,10 +34,10 @@ export default function RootLayout({
           data-design-contract="68d8bc56"
           dangerouslySetInnerHTML={{
             __html: `<!--
-THESIS: 订阅是持续发生的个人账期，不是后台数据；首页必须先让用户看懂记录、看清、处理的闭环。
-OWN-WORLD: 夜航账本以哑黑仪表、白色读数和紫红光谱为核心；金额、日期、状态像六联仪表一样各自承担一个真相。
-STORY: 首屏用极大标题建立价值，再用真实能力读数与动态三步指引解释流程，最后把续费生命周期拉成一条可追踪时间线。
-FIRST VIEWPORT: 左侧主张与登录路径，右侧只呈现月均支出、下次扣款和未来七天三项关键读数；大空间与低频光晕制造夜间专注感。
+THESIS: 订阅是持续发生的个人账期，不是后台数据；访客理解产品与登录后处理账目的全过程必须处于同一个夜航账本空间。
+OWN-WORLD: 夜航账本以哑黑仪表、白色读数和紫红光谱为核心；登录前后共享背景、材质、按钮、字体、动效与状态语义，不发生视觉换站。
+STORY: 登录前建立记录、看清、处理的价值闭环；登录后承接为总览、续费日历、消费分析和订阅流水，持续强调金额、日期与状态。
+FIRST VIEWPORT: 未登录时呈现价值与登录路径；已登录时呈现问候、四项关键读数和续费任务，两种状态都以暗场、白色读数和紫红主操作保持同一产品身份。
 FORM: 夜间飞行仪表与当代订阅账本的融合，保留参考站的大标题、暗场和渐变节奏，但不复刻其品牌或素材。
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
 -->`,

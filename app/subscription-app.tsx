@@ -220,7 +220,7 @@ export default function SubscriptionApp({ user, signInPath, signOutPath }: Subsc
 
         <div className="page-wrap">
           <section id="overview" className="hero-row">
-            <div><p className="eyebrow">TUESDAY · 7月21日</p><h1>下午好，{user.fullName || "朋友"} <span>☀</span></h1><p>{subscriptions.length ? <>你的订阅都在掌控中。未来 7 天有 <strong>{upcoming.length} 笔</strong>即将续费。</> : <>你的个人空间还没有订阅记录，添加第一项开始管理。</>}</p></div>
+            <div><p className="eyebrow">TUESDAY · 7月21日</p><h1>下午好，{user.fullName || "朋友"} <span className="day-signal" aria-hidden="true" /></h1><p>{subscriptions.length ? <>你的订阅都在掌控中。未来 7 天有 <strong>{upcoming.length} 笔</strong>即将续费。</> : <>你的个人空间还没有订阅记录，添加第一项开始管理。</>}</p></div>
             <div className="month-switch"><button aria-label="上个月">‹</button><span>2026年 7月</span><button aria-label="下个月">›</button></div>
           </section>
 
