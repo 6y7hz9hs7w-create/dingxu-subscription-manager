@@ -3,8 +3,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("subscription manager ships its core flows", async () => {
-  const [page, app, api, auth, schema, layout, css] = await Promise.all([
+  const [page, dashboard, app, api, auth, schema, layout, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/dashboard/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/subscription-app.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/subscriptions/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/chatgpt-auth.ts", import.meta.url), "utf8"),
@@ -14,6 +15,9 @@ test("subscription manager ships its core flows", async () => {
   ]);
   assert.match(page, /getChatGPTUser/);
   assert.match(page, /signInPath=/);
+  assert.match(page, /<Landing/);
+  assert.match(dashboard, /requireChatGPTUser\("\/dashboard"\)/);
+  assert.match(dashboard, /<SubscriptionApp/);
   assert.match(app, /本月订阅支出/);
   assert.match(app, /即将续费/);
   assert.match(app, /添加并开启提醒/);
