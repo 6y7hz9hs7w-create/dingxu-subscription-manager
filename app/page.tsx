@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SubscriptionApp from "./subscription-app";
+import Landing from "./landing";
 import { chatGPTSignInPath, chatGPTSignOutPath, getChatGPTUser } from "./chatgpt-auth";
 
 export const dynamic = "force-dynamic";
@@ -11,5 +12,6 @@ export const metadata: Metadata = {
 
 export default async function Home() {
   const user = await getChatGPTUser();
+  if (!user) return <Landing signInPath={chatGPTSignInPath("/")} />;
   return <SubscriptionApp user={user} signInPath={chatGPTSignInPath("/")} signOutPath={chatGPTSignOutPath("/")} />;
 }

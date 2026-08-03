@@ -34,11 +34,11 @@ export default function RootLayout({
           data-design-contract="68d8bc56"
           dangerouslySetInnerHTML={{
             __html: `<!--
-THESIS: 订阅不是后台数据，而是会重复发生的个人账目；拒绝同尺寸指标卡堆叠的企业面板。
-OWN-WORLD: 数字手账以纸白、墨黑和电光紫为底，薄荷、柑橘、珊瑚色签只表达账目状态；列表像流水，控件像索引签。
-STORY: 用户先看月均支出和近期状态，再进入订阅流水、续费日历或分类支出，并完成管理动作。
-FIRST VIEWPORT: 账本标题与同步状态居左，导出居右；月均支出占主位，数量指标紧邻，下方索引切换完整功能。
-FORM: 年轻个人手账与消费凭证，第六方向，seed 68d8bc56。
+THESIS: 订阅是持续发生的个人账期，不是后台数据；首页必须先让用户看懂记录、看清、处理的闭环。
+OWN-WORLD: 夜航账本以哑黑仪表、白色读数和紫红光谱为核心；金额、日期、状态像六联仪表一样各自承担一个真相。
+STORY: 首屏用极大标题建立价值，再用真实能力读数与动态三步指引解释流程，最后把续费生命周期拉成一条可追踪时间线。
+FIRST VIEWPORT: 左侧主张与登录路径，右侧只呈现月均支出、下次扣款和未来七天三项关键读数；大空间与低频光晕制造夜间专注感。
+FORM: 夜间飞行仪表与当代订阅账本的融合，保留参考站的大标题、暗场和渐变节奏，但不复刻其品牌或素材。
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
 -->`,
           }}
