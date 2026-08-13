@@ -1915,6 +1915,10 @@ test("WeChat mini program uses server-owned identity with user-approved profile"
   assert.match(settingsText, /年度订阅账单/);
   assert.match(settingsText, /data-report="all"/);
   assert.match(settingsText, /canvas type="2d"/);
+  // 375px 的导出画布正好等于整屏宽，常驻页面会撑出横向滚动；原生组件不受祖先 overflow 约束，
+  // 只能靠 wx:if 在导出时才挂载，并等 setData 渲染完成后再查询画布节点。
+  assert.match(settingsText, /canvas type="2d" wx:if="\{\{exporting\}\}"/);
+  assert.match(settingsLogicText, /setData\(\{ exporting: true \}, resolve\)/);
   assert.match(settingsText, /微信身份已无感识别/);
   assert.doesNotMatch(settingsText, /class="profile-card"/);
   assert.match(settingsText, /无需授权昵称、头像或手机号即可使用/);

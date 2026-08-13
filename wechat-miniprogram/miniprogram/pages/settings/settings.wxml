@@ -7,7 +7,6 @@
   <view class="renewal-flow panel" wx:if="{{renewalFlowActive}}">
     <view class="renewal-flow-head">
       <view><text>续费处理</text><text>{{renewalFlowIndex}} / {{renewalFlowTotal}}</text></view>
-      <button bindtap="closeRenewalFlow" aria-label="退出续费处理">退出</button>
     </view>
     <view class="renewal-flow-progress"><view style="width: {{renewalFlowProgress}}%"></view></view>
     <view class="renewal-flow-service">
@@ -15,12 +14,17 @@
         <image wx:if="{{renewalFlowCurrent.logoPath}}" src="{{renewalFlowCurrent.logoPath}}" mode="aspectFit" fade-in="{{false}}" />
         <view wx:else class="service-fallback-icon" aria-hidden="true"><view class="service-fallback-card"><view></view><view></view></view></view>
       </view>
-      <view class="renewal-flow-copy"><text>{{renewalFlowCurrent.name}}</text><text>{{renewalFlowCurrent.dateText}} · {{renewalFlowCurrent.paymentChannelText}} · {{renewalFlowCurrent.billingCycle === 'yearly' ? '年付' : '月付'}}</text></view>
-      <view class="renewal-flow-price"><text>{{renewalFlowCurrent.amountText}}</text><text>/{{renewalFlowCurrent.cycleText}}</text></view>
-    </view>
-    <view class="renewal-amount-row">
-      <button bindtap="toggleRenewalAmount">{{renewalAmountEditing ? '使用原金额' : '金额有变化'}}</button>
-      <view wx:if="{{renewalAmountEditing}}"><text>{{renewalFlowCurrent.currency === 'USD' ? '$' : '¥'}}</text><input type="digit" value="{{renewalAmountValue}}" bindinput="changeRenewalAmount" focus="{{true}}" /></view>
+      <view class="renewal-flow-copy">
+        <text>{{renewalFlowCurrent.name}}</text>
+        <text>{{renewalFlowCurrent.dateText}} · {{renewalFlowCurrent.paymentChannelText}} · {{renewalFlowCurrent.billingCycle === 'yearly' ? '年付' : '月付'}}</text>
+        <view class="renewal-price-action-row">
+          <view class="renewal-flow-price"><text>{{renewalFlowCurrent.amountText}}</text><text>/{{renewalFlowCurrent.cycleText}}</text></view>
+          <view class="renewal-amount-row">
+            <button class="renewal-amount-trigger" bindtap="toggleRenewalAmount">{{renewalAmountEditing ? '使用原金额' : '金额有变化'}}</button>
+            <view wx:if="{{renewalAmountEditing}}"><text>{{renewalFlowCurrent.currency === 'USD' ? '$' : '¥'}}</text><input type="digit" value="{{renewalAmountValue}}" bindinput="changeRenewalAmount" focus="{{true}}" /></view>
+          </view>
+        </view>
+      </view>
     </view>
     <button class="renewal-primary" data-operation="renew" bindtap="processRenewalFlow" loading="{{actionBusy}}" disabled="{{actionBusy}}">已续费，顺延账期</button>
     <view class="renewal-secondary-actions">
@@ -384,7 +388,7 @@
       <button class="danger-action" bindtap="clearAll">清空数据</button>
     </view>
   </view>
-  <canvas type="2d" id="reportCanvas" class="report-canvas"></canvas>
+  <canvas type="2d" wx:if="{{exporting}}" id="reportCanvas" class="report-canvas"></canvas>
   </block>
 
   <view class="feedback-card panel">

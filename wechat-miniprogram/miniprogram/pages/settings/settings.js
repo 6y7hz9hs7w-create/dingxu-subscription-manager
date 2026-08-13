@@ -969,21 +969,25 @@ Page({
   },
 
   exportReportImages(report) {
-    this.setData({ exporting: true });
     wx.showLoading({ title: "生成图片中", mask: true });
-    getExportService().createImages(this, report).then((paths) => {
-      wx.hideLoading();
-      wx.previewImage({
-        current: paths[0],
-        urls: paths,
-        success: () => wx.showToast({ title: paths.length > 1 ? `共 ${paths.length} 张` : "长按图片可保存", icon: "none" }),
+    // 画布只在导出期间挂载，必须等这次 setData 渲染完成后再查询节点。
+    new Promise((resolve) => this.setData({ exporting: true }, resolve))
+      .then(() => getExportService().createImages(this, report))
+      .then((paths) => {
+        wx.hideLoading();
+        wx.previewImage({
+          current: paths[0],
+          urls: paths,
+          success: () => wx.showToast({ title: paths.length > 1 ? `共 ${paths.length} 张` : "长按图片可保存", icon: "none" }),
+        });
+      })
+      .catch((error) => {
+        wx.hideLoading();
+        wx.showModal({ title: "图片生成失败", content: error.errMsg || error.message || "请稍后再试", showCancel: false });
+      })
+      .finally(() => {
+        this.setData({ exporting: false });
       });
-    }).catch((error) => {
-      wx.hideLoading();
-      wx.showModal({ title: "图片生成失败", content: error.errMsg || error.message || "请稍后再试", showCancel: false });
-    }).finally(() => {
-      this.setData({ exporting: false });
-    });
   },
 
   clearCache() {
