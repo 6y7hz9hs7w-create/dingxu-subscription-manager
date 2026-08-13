@@ -38,7 +38,7 @@
   <view class="panel agenda">
     <view class="agenda-item" wx:for="{{monthItems}}" wx:key="_id" data-date="{{item.nextChargeDate}}" bindtap="openDateDetails" hover-class="agenda-item-pressed">
       <view class="service-mark {{item.logoPath ? 'has-logo' : ''}}" style="background: {{item.color}}">
-        <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+        <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" fade-in="{{false}}" />
         <view wx:else class="service-fallback-icon" aria-hidden="true">
           <view class="service-fallback-card"><view></view><view></view></view>
         </view>

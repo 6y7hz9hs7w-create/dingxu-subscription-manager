@@ -115,7 +115,7 @@
         <view wx:if="{{selectionMode}}" class="batch-selector {{batchSelection[item._id] ? 'selected' : ''}}" data-id="{{item._id}}" bindtap="toggleSubscriptionSelection" hover-class="press-feedback" role="checkbox" aria-checked="{{batchSelection[item._id]}}" aria-label="选择 {{item.name}}"><view></view></view>
         <view class="subscription-identity">
           <view class="service-mark {{item.logoPath ? 'has-logo' : ''}}" style="background: {{item.color}}">
-            <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+            <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" fade-in="{{false}}" />
             <view wx:else class="service-fallback-icon" aria-hidden="true">
               <view class="service-fallback-card"><view></view><view></view></view>
             </view>

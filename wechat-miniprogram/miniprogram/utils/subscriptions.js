@@ -284,7 +284,7 @@ function decorate(item, today) {
     archiveDateText: archiveDate ? dateLabel(archiveDate) : "",
     daysText: remainingDaysText(remainingDays),
     remainingDays,
-    logoPath: item.iconFileId || serviceCatalog.logoForService(item.name),
+    logoPath: item.iconUrl || item.iconFileId || serviceCatalog.logoForService(item.name),
     lastActionDateText: item.lastActionDate ? dateLabel(item.lastActionDate) : "",
     lastActionText: lastActionText[item.lastAction] || "",
     paymentChannelText: paymentChannelInfo(item.paymentChannel).label,

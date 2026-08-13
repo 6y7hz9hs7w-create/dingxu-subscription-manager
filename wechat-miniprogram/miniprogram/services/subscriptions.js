@@ -1,14 +1,17 @@
 /* global getApp, wx */
 const CACHE_TTL = 60000;
 const EXCHANGE_RATE_CACHE_TTL = 10 * 60 * 1000;
+const ICON_URL_BATCH_SIZE = 50;
 
 let listCache = null;
 let listFetchedAt = 0;
 let listRequest = null;
+let listRequestVersion = 0;
 let listSignature = "";
 let exchangeRateCache = null;
 let exchangeRateFetchedAt = 0;
 let exchangeRateRequest = null;
+const iconUrlCache = new Map();
 
 const STATUS_RANK = { pending_confirmation: 0, active: 1, cancel_pending: 2, paused: 3, archived: 4 };
 
@@ -50,6 +53,7 @@ function call(action, data) {
 function invalidate() {
   listCache = null;
   listFetchedAt = 0;
+  listRequestVersion += 1;
   listSignature = "";
 }
 
@@ -78,6 +82,33 @@ function removeCachedSubscription(id) {
   if (next.length === listCache.length) return false;
   commitList(next);
   return true;
+}
+
+function warmIconUrls(items) {
+  if (!wx.cloud || typeof wx.cloud.getTempFileURL !== "function") return;
+  const fileIds = [...new Set((items || [])
+    .map((item) => item.iconFileId)
+    .filter((fileId) => typeof fileId === "string" && fileId.startsWith("cloud://") && !iconUrlCache.has(fileId)))];
+  if (!fileIds.length) return;
+  const batches = [];
+  for (let index = 0; index < fileIds.length; index += ICON_URL_BATCH_SIZE) {
+    batches.push(fileIds.slice(index, index + ICON_URL_BATCH_SIZE));
+  }
+  Promise.all(batches.map((fileList) => wx.cloud.getTempFileURL({ fileList })))
+    .then((responses) => responses.flatMap((response) => response.fileList || []))
+    .then((fileList) => {
+      fileList.forEach((file) => {
+        if (file.fileID && file.tempFileURL) iconUrlCache.set(file.fileID, file.tempFileURL);
+      });
+      if (listCache) {
+        listCache = listCache.map((item) => {
+          const iconUrl = iconUrlCache.get(item.iconFileId);
+          return iconUrl ? Object.assign({}, item, { iconUrl }) : item;
+        });
+        listSignature = subscriptionListSignature(listCache);
+      }
+    })
+    .catch(() => {});
 }
 
 function mutate(action, data) {
@@ -127,17 +158,25 @@ module.exports = {
     if (!force && cacheIsFresh) return Promise.resolve(listCache);
     // 下拉刷新不能复用在途的普通请求，否则拿到的仍是刷新前发起的那份数据。
     if (listRequest && !force) return listRequest;
-    listRequest = call("list").then((result) => {
+    const requestVersion = ++listRequestVersion;
+    const request = call("list").then((result) => {
       const nextList = result.subscriptions || [];
+      // A forced refresh can overtake an older request. Do not let the older
+      // response overwrite fresh data or reset the active request lock.
+      if (requestVersion !== listRequestVersion) return listCache || nextList;
       const nextSignature = subscriptionListSignature(nextList);
       if (listCache && nextSignature === listSignature) {
         listFetchedAt = Date.now();
+        warmIconUrls(listCache);
         return listCache;
       }
-      return commitList(nextList);
+      const committed = commitList(nextList);
+      warmIconUrls(committed);
+      return committed;
     }).finally(() => {
-      listRequest = null;
+      if (listRequest === request) listRequest = null;
     });
+    listRequest = request;
     return listRequest;
   },
   peekExchangeRate() {

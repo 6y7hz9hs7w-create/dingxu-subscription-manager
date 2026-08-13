@@ -1630,6 +1630,39 @@ test("subscription mutations update the local list without a second full-list re
   assert.equal(cached[0].status, "paused");
 });
 
+test("forced list refresh cannot be overwritten by an older in-flight response", async () => {
+  const serviceSource = await readFile(new URL("miniprogram/services/subscriptions.js", root), "utf8");
+  const pending = [];
+  let listRequests = 0;
+  const sandbox = {
+    module: { exports: {} },
+    getApp: () => ({ ensureLogin: () => Promise.resolve({}) }),
+    wx: {
+      cloud: {
+        callFunction({ data }) {
+          assert.equal(data.action, "list");
+          listRequests += 1;
+          return new Promise((resolve) => pending.push(resolve));
+        },
+      },
+    },
+  };
+  vm.runInNewContext(serviceSource, sandbox);
+  const service = sandbox.module.exports;
+  const first = service.list();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const forced = service.list({ force: true });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const coalesced = service.list();
+  assert.equal(listRequests, 2);
+  pending[0]({ result: { ok: true, subscriptions: [{ _id: "old", status: "active" }] } });
+  await first;
+  assert.equal(listRequests, 2);
+  pending[1]({ result: { ok: true, subscriptions: [{ _id: "new", status: "active" }] } });
+  await Promise.all([forced, coalesced]);
+  assert.equal(service.peek()[0]._id, "new");
+});
+
 test("post-mutation pages reuse the updated cache and stale exchange-rate requests are ignored", async () => {
   const [indexLogic, calendarLogic, settingsLogic, addLogic, cloudLogic] = await Promise.all([
     readFile(new URL("miniprogram/pages/index/index.js", root), "utf8"),
