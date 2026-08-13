@@ -1,98 +1,25 @@
-# vinext-starter
+# 订序 · 微信小程序
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+个人订阅与续费管理小程序：记录订阅费用、续费日与处理状态，提供续费日历、消费分析、微信续费提醒，以及报告与 CSV 导出。数据存于微信云开发，按微信身份隔离。
 
-## Prerequisites
+## 目录结构
 
-- Node.js `>=22.13.0`
+- `wechat-miniprogram/miniprogram/` — 小程序前端（页面、组件、services、utils）
+- `wechat-miniprogram/cloudfunctions/subscriptionService/` — 云函数（数据读写、汇率、图标匹配、续费提醒定时任务）
+- `tests/wechat-miniprogram.test.mjs` — 纯逻辑单元测试（工具函数、账单推算、状态机等）
 
-## Quick Start
+## 开发与部署
+
+1. 用微信开发者工具打开 `wechat-miniprogram/`，AppID：`wxa5a0b5d34c4f21fa`。
+2. 在 `miniprogram/config.js` 配置云开发环境 ID。
+3. 部署云函数 `subscriptionService`（选择云端安装依赖）。
+4. 在公众平台「订阅消息」申请「续费提醒」模板，将模板 ID 填入 `cloudfunctions/subscriptionService/index.js` 的 `RENEWAL_TEMPLATE_ID`。
+5. 在公众平台声明隐私协议（相册、用户信息），否则图片选择会被拦截。
+
+## 测试
 
 ```bash
-npm install
-npm run dev
-npm run build
+npm test
 ```
 
-This starter does not use `wrangler.jsonc`.
-
-## Included Shape
-
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+仅依赖 Node 内置 test runner（`>=22.13.0`），无需安装依赖。

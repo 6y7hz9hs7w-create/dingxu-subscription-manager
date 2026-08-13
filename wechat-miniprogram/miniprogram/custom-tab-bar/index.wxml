@@ -1,0 +1,17 @@
+<view class="tabbar">
+  <view class="tabbar-inner">
+    <view
+      class="tab-item {{selected === index ? 'selected' : ''}} {{item.center ? 'center-item' : ''}}"
+      wx:for="{{items}}"
+      wx:key="pagePath"
+      data-index="{{index}}"
+      data-path="{{item.pagePath}}"
+      bindtap="switchTab"
+      role="button"
+      aria-label="{{item.center ? '添加订阅' : item.text}}"
+    >
+      <view wx:if="{{item.center}}" class="add-button"><view></view><view></view></view>
+      <text wx:else class="tab-label">{{item.text}}</text>
+    </view>
+  </view>
+</view>

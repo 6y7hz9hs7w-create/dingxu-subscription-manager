@@ -1,69 +1,199 @@
-<view class="page dashboard-page">
+<view class="page dashboard-page {{selectionMode ? 'batch-active' : ''}}">
   <view class="brand-row">
-    <view class="brand-mark"><view></view><view></view></view>
-    <text class="brand-name">订序</text>
-    <button class="add-small" bindtap="addSubscription" aria-label="添加订阅">＋</button>
+    <view class="brand-lockup">
+      <view class="brand-mark"><view></view><view></view></view>
+      <view><text class="brand-name">订序</text><text class="brand-caption">个人订阅管理</text></view>
+    </view>
+    <view
+      class="sync-chip {{accountState}}"
+      bindtap="openAccount"
+      hover-class="press-feedback"
+      hover-stay-time="80"
+      role="button"
+    ><view></view><text>{{accountStatusText}}</text></view>
   </view>
 
-  <view class="hero">
-    <text class="eyebrow">PERSONAL SUBSCRIPTIONS</text>
-    <text class="page-title">把每一份订阅安排好</text>
-    <text class="page-lead">微信已安全识别你的独立数据空间。</text>
-  </view>
-
-  <view class="stats-grid">
-    <view class="stat-card primary">
-      <text>月均支出</text><text class="stat-value">{{monthlyText}}</text><text class="stat-note">{{activeCount}} 项生效中</text>
+  <view class="overview-hero">
+    <view class="hero-orbit orbit-one"></view>
+    <view class="hero-orbit orbit-two"></view>
+    <view class="hero-head">
+      <view
+        class="{{expandedOverviewMetric === 'monthly' ? 'selected' : ''}}"
+        data-metric="monthly"
+        bindtap="toggleOverviewMetric"
+        hover-class="hero-stat-pressed"
+        role="button"
+      ><text class="hero-kicker">每月固定支出</text><text class="hero-value">{{monthlyText}}</text></view>
+      <view class="hero-count"><text>{{activeCount}}</text><text>项生效</text></view>
     </view>
-    <view class="stat-card">
-      <text>年度预估</text><text class="stat-value">{{yearlyText}}</text><text class="stat-note">按当前周期折算</text>
-    </view>
-    <view class="stat-card warning-card">
-      <text>7 天内扣款</text><text class="stat-value">{{upcomingText}}</text><text class="stat-note">{{upcoming.length}} 笔需留意</text>
-    </view>
-  </view>
-
-  <view class="section-head">
-    <view><text class="eyebrow">UP NEXT</text><text class="section-title">即将续费</text></view>
-    <text class="section-count">{{upcoming.length}} 项</text>
-  </view>
-  <view class="panel renew-panel">
-    <block wx:if="{{upcoming.length}}">
-      <view class="renew-item" wx:for="{{upcoming}}" wx:key="_id">
-        <view class="service-mark" style="background: {{item.color}}">{{item.mark}}</view>
-        <view class="service-copy"><text class="service-name">{{item.name}}</text><text>{{item.dateText}} · {{item.daysText}}</text></view>
-        <view class="service-price"><text>{{item.amountText}}</text><text>/{{item.cycleText}}</text></view>
+    <text class="hero-copy">月付与年付统一折算，实际续费项目直接显示在下方。</text>
+    <view class="hero-stats">
+      <view
+        class="{{expandedOverviewMetric === 'yearly' ? 'selected' : ''}}"
+        data-metric="yearly"
+        bindtap="toggleOverviewMetric"
+        hover-class="hero-stat-pressed"
+        role="button"
+      >
+        <text>一年预计花费</text><text>{{yearlyText}}</text><text>{{expandedOverviewMetric === 'yearly' ? '收起明细 ↑' : '展开明细 ↓'}}</text>
       </view>
-    </block>
-    <view class="empty-state compact" wx:else>
-      <view class="empty-icon">○</view><text class="empty-title">未来 7 天没有扣款</text><text class="empty-copy">你的近期订阅很轻松。</text>
+      <view
+        class="{{expandedOverviewMetric === 'upcoming' ? 'selected' : ''}}"
+        data-metric="upcoming"
+        bindtap="toggleOverviewMetric"
+        hover-class="hero-stat-pressed"
+        role="button"
+      >
+        <text>未来 7 天待扣</text><text>{{upcomingText}}</text><text>{{upcomingCount}} 笔 · {{expandedOverviewMetric === 'upcoming' ? '收起 ↑' : '展开 ↓'}}</text>
+      </view>
     </view>
+  </view>
+
+  <view class="overview-detail panel" wx:if="{{expandedOverviewMetric}}">
+    <view class="overview-detail-head">
+      <view><text>{{overviewDetailTitle}}</text><text>{{overviewDetailCopy}}</text></view>
+      <text>{{overviewDetailValue}}</text>
+    </view>
+    <view class="overview-detail-list" wx:if="{{overviewDetailItems.length}}">
+      <view class="overview-detail-row" wx:for="{{overviewDetailItems}}" wx:key="_id">
+        <view class="overview-detail-logo {{item.logoPath ? 'has-logo' : ''}}" style="background: {{item.color}}">
+          <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+          <view wx:else class="overview-detail-fallback"><view></view><view></view></view>
+        </view>
+        <view class="overview-detail-copy"><text>{{item.name}}</text><text>{{item.metaText}}</text></view>
+        <text class="overview-detail-value">{{item.valueText}}</text>
+      </view>
+    </view>
+    <view class="overview-detail-empty" wx:else>当前没有符合条件的订阅。</view>
+  </view>
+
+  <view class="activation-card panel" wx:if="{{!loading && subscriptionCount && activationCount < 3}}">
+    <view class="activation-copy">
+      <text class="eyebrow">新手进度</text>
+      <text>先记录 3 项常用订阅</text>
+      <text>完成后，月支出、续费日历和提醒才真正有用。</text>
+    </view>
+    <view class="activation-progress"><view style="width: {{activationProgress}}%"></view></view>
+    <view class="activation-footer"><text>已添加 {{activationCount}} / 3 项</text><button bindtap="addSubscription">继续添加</button></view>
+  </view>
+
+  <view id="pending-renewals" class="pending-alert" wx:if="{{pendingCount}}" bindtap="openRenewalCenter" hover-class="press-feedback" role="button">
+    <view><text>{{pendingCount}} 项续费等待确认</text><text>请选择已续费、已取消，或延后 1 / 3 / 7 天处理。</text></view>
+    <text>去处理 ›</text>
   </view>
 
   <view class="section-head subscriptions-head">
-    <view><text class="eyebrow">ALL SERVICES</text><text class="section-title">我的订阅</text></view>
-    <text class="section-count">{{subscriptions.length}} 项</text>
+    <view><text class="eyebrow">全部服务</text><text class="section-title">订阅清单</text></view>
+    <view class="section-head-actions">
+      <view class="section-count" wx:if="{{searchQuery || statusFilter !== 'all'}}">{{visibleSubscriptions.length}} / {{subscriptionCount}} 项</view>
+      <view class="section-count" wx:else>{{subscriptionCount}} 项</view>
+      <button class="batch-mode-button {{selectionMode ? 'selected' : ''}}" bindtap="toggleSelectionMode" disabled="{{actionBusy}}">{{selectionMode ? '完成' : '批量管理'}}</button>
+    </view>
   </view>
 
   <view class="loading" wx:if="{{loading}}">正在读取你的订阅…</view>
-  <view class="subscription-list" wx:elif="{{subscriptions.length}}">
-    <view class="subscription-card panel {{item.status === 'cancel_pending' ? 'cancelled' : ''}}" wx:for="{{subscriptions}}" wx:key="_id">
-      <view class="subscription-top">
-        <view class="service-mark" style="background: {{item.color}}">{{item.mark}}</view>
-        <view class="subscription-main"><text class="service-name">{{item.name}}</text><text>{{item.note || item.category}}</text></view>
-        <view class="service-price"><text>{{item.amountText}}</text><text>/{{item.cycleText}}</text></view>
+  <block wx:elif="{{subscriptionCount}}">
+    <view class="subscription-tools">
+      <view class="subscription-search panel">
+        <view class="subscription-search-icon" aria-hidden="true"></view>
+        <input value="{{searchQuery}}" bindinput="changeSearch" confirm-type="search" placeholder="搜索服务、分类或备注" placeholder-class="subscription-search-placeholder" />
+        <button wx:if="{{searchQuery}}" bindtap="clearSearch">清除</button>
       </view>
-      <view class="subscription-meta"><text>{{item.status === 'cancel_pending' ? '计划取消' : '下次续费'}}</text><text>{{item.dateText}}</text></view>
-      <view class="card-actions">
-        <button data-id="{{item._id}}" data-operation="renew" bindtap="manageSubscription">确认续费</button>
-        <button class="danger" wx:if="{{item.status !== 'cancel_pending'}}" data-id="{{item._id}}" data-operation="cancel" bindtap="manageSubscription">到期取消</button>
-        <button wx:else data-id="{{item._id}}" data-operation="restore" bindtap="manageSubscription">恢复订阅</button>
+      <picker mode="selector" range="{{sortOptions}}" value="{{sortIndex}}" bindchange="changeSort">
+        <view class="subscription-sort panel"><text>{{sortLabel}}</text><view aria-hidden="true"></view></view>
+      </picker>
+    </view>
+    <scroll-view class="status-filter-scroll" scroll-x show-scrollbar="{{false}}">
+      <view class="status-filters">
+        <button class="{{statusFilter === item.value ? 'selected' : ''}}" wx:for="{{statusFilters}}" wx:key="value" data-status="{{item.value}}" bindtap="changeStatusFilter"><text>{{item.label}}</text><text>{{item.count}}</text></button>
+        <button class="reset-view" wx:if="{{sortIndex || statusFilter !== 'all'}}" bindtap="resetListFilters">恢复默认</button>
+      </view>
+    </scroll-view>
+    <view class="subscription-list" wx:if="{{visibleSubscriptions.length}}">
+      <view id="subscription-{{item._id}}" class="subscription-card panel {{item.status === 'cancel_pending' || item.status === 'archived' ? 'cancelled' : item.status === 'paused' ? 'paused' : item.status === 'pending_confirmation' ? 'pending' : 'active'}} {{batchSelection[item._id] ? 'batch-selected' : ''}}" wx:for="{{visibleSubscriptions}}" wx:key="_id">
+      <view class="subscription-top">
+        <view wx:if="{{selectionMode}}" class="batch-selector {{batchSelection[item._id] ? 'selected' : ''}}" data-id="{{item._id}}" bindtap="toggleSubscriptionSelection" hover-class="press-feedback" role="checkbox" aria-checked="{{batchSelection[item._id]}}" aria-label="选择 {{item.name}}"><view></view></view>
+        <view class="subscription-identity">
+          <view class="service-mark {{item.logoPath ? 'has-logo' : ''}}" style="background: {{item.color}}">
+            <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+            <view wx:else class="service-fallback-icon" aria-hidden="true">
+              <view class="service-fallback-card"><view></view><view></view></view>
+            </view>
+          </view>
+          <view class="subscription-main"><text class="service-name">{{item.name}}</text><text>{{item.note || item.category}}</text></view>
+        </view>
+        <view class="service-price">
+          <view class="service-price-main"><text>{{item.amountText}}</text><text>/{{item.cycleText}}</text></view>
+          <text class="source-currency" wx:if="{{item.sourceAmountText}}">原价 {{item.sourceAmountText}}</text>
+        </view>
+      </view>
+      <view class="subscription-meta"><text>{{item.statusLabel}} · {{item.paymentChannelText}}</text><text>{{item.status === 'paused' ? '原续费日 ' : ''}}{{item.dateText}}</text></view>
+      <view class="auto-delete-note" wx:if="{{item.status === 'cancel_pending' && item.archiveDateText}}">
+        {{item.serviceClosedDateText ? '已确认 ' + item.serviceClosedDateText + ' 关闭自动续费 · ' : ''}}7 天后自动归档 · {{item.archiveDateText}}
+      </view>
+      <view class="service-action-note" wx:if="{{item.lastActionDateText && item.status !== 'cancel_pending'}}">最近处理 · {{item.lastActionDateText}} {{item.lastActionText}}</view>
+      <view class="service-action-note" wx:if="{{item.priceChangeText}}">最近调价 · {{item.priceChangedDateText}} {{item.priceChangeText}}</view>
+      <view class="pause-note" wx:if="{{item.status === 'paused'}}">暂停期间不会参与续费统计，也不会被定时删除</view>
+      <view class="pause-note" wx:if="{{item.status === 'archived'}}">历史记录不会参与支出和续费统计，可恢复或手动永久删除</view>
+      <view class="pending-note" wx:if="{{item.status === 'pending_confirmation'}}">{{item.snoozeDateText ? '已延后至 ' + item.snoozeDateText + ' 处理' : '续费日已过，请确认本期处理结果'}}</view>
+      <view class="reminder-status {{item.reminderState}}" wx:if="{{item.status === 'active'}}">
+        <view class="{{item.reminderState}}"></view>
+        <text>{{item.reminderStatusText}}</text>
+        <button wx:if="{{item.reminderState !== 'enabled'}}" data-id="{{item._id}}" bindtap="authorizeReminder">{{item.reminderState === 'unauthorized' ? '开启提醒' : '重新开启'}}</button>
+      </view>
+      <view class="card-actions {{item.status === 'active' || item.status === 'pending_confirmation' || item.status === 'cancel_pending' ? 'four-actions' : ''}}" wx:if="{{!selectionMode}}">
+        <button class="edit-action" data-id="{{item._id}}" bindtap="editSubscription" disabled="{{actionBusy}}">编辑</button>
+        <block wx:if="{{item.status === 'active'}}">
+          <button class="renew-action" data-id="{{item._id}}" data-operation="renew" bindtap="manageSubscription" disabled="{{actionBusy}}">确认续费</button>
+          <button class="pause-action" data-id="{{item._id}}" data-operation="pause" bindtap="manageSubscription" disabled="{{actionBusy}}">暂停订阅</button>
+          <button class="danger" data-id="{{item._id}}" data-operation="cancel" bindtap="manageSubscription" disabled="{{actionBusy}}">到期取消</button>
+        </block>
+        <block wx:elif="{{item.status === 'pending_confirmation'}}">
+          <button class="renew-action" data-id="{{item._id}}" data-operation="renew" bindtap="manageSubscription" disabled="{{actionBusy}}">已续费</button>
+          <button class="pause-action" data-id="{{item._id}}" bindtap="snoozeSubscription" disabled="{{actionBusy}}">稍后处理</button>
+          <button class="danger" data-id="{{item._id}}" data-operation="cancel" bindtap="manageSubscription" disabled="{{actionBusy}}">已取消</button>
+        </block>
+        <block wx:elif="{{item.status === 'cancel_pending'}}">
+          <button class="renew-action" data-id="{{item._id}}" data-operation="restore" bindtap="manageSubscription" disabled="{{actionBusy}}">恢复订阅</button>
+          <button class="pause-action" data-id="{{item._id}}" data-operation="pause" bindtap="manageSubscription" disabled="{{actionBusy}}">改为暂停</button>
+          <button class="delete-action" data-id="{{item._id}}" bindtap="deleteSubscription" disabled="{{actionBusy}}">删除订阅</button>
+        </block>
+        <block wx:else>
+          <button class="renew-action" data-id="{{item._id}}" data-operation="restore" bindtap="manageSubscription" disabled="{{actionBusy}}">恢复订阅</button>
+          <button class="delete-action" data-id="{{item._id}}" bindtap="deleteSubscription" disabled="{{actionBusy}}">删除订阅</button>
+        </block>
+      </view>
       </view>
     </view>
-  </view>
+    <view class="search-empty" wx:else>
+      <text>没有符合当前条件的订阅</text>
+      <text>调整关键词或状态筛选后再试</text>
+      <button bindtap="resetListFilters">重置筛选</button>
+    </view>
+  </block>
   <view class="panel empty-state" wx:else>
-    <view class="empty-icon">＋</view><text class="empty-title">从第一项订阅开始</text><text class="empty-copy">记录服务、金额和续费日期，数据只属于当前微信账号。</text><button class="primary-button" bindtap="addSubscription">添加第一项订阅</button>
+    <view class="empty-icon">＋</view><text class="empty-title">建立你的订阅清单</text><text class="empty-copy">记录服务、金额和续费日期，所有数据只属于当前微信账号。</text><button class="primary-button" bindtap="addSubscription">添加第一项订阅</button>
   </view>
 
-  <button class="floating-add" bindtap="addSubscription">＋ 添加订阅</button>
+  <view class="batch-action-bar" wx:if="{{selectionMode}}">
+    <view class="batch-action-head">
+      <view class="batch-selection-summary"><text>{{batchSelectedCount}}</text><text>项已选</text></view>
+      <view class="batch-action-shortcuts"><button bindtap="selectVisibleSubscriptions">选择当前</button><button bindtap="clearBatchSelection" disabled="{{!batchSelectedCount}}">清空</button></view>
+    </view>
+    <view class="batch-action-buttons">
+      <button data-operation="pause" bindtap="batchManageSubscriptions" disabled="{{!batchPausableCount || actionBusy}}"><text>暂停订阅</text><text>{{batchPausableCount || 0}} 项</text></button>
+      <button data-operation="restore" bindtap="batchManageSubscriptions" disabled="{{!batchRestorableCount || actionBusy}}"><text>恢复订阅</text><text>{{batchRestorableCount || 0}} 项</text></button>
+    </view>
+  </view>
+
+  <view class="management-note" wx:if="{{subscriptionCount}}">
+    <view class="management-note-icon" aria-hidden="true">
+      <view class="management-toggle"><view></view></view>
+    </view>
+    <view class="management-note-copy">
+      <text class="eyebrow">管理提示</text>
+      <text>{{managementNoteTitle}}</text>
+      <text>{{managementNoteCopy}}</text>
+    </view>
+  </view>
 </view>

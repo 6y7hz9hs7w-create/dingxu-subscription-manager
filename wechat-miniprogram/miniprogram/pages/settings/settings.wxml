@@ -1,22 +1,400 @@
 <view class="page settings-page">
-  <view class="intro"><text class="eyebrow">ACCOUNT CENTER</text><text class="page-title">设置与个人中心</text><text class="page-lead">管理你的微信账号与独立数据空间。</text></view>
-
-  <view class="account-card">
-    <view class="avatar">微</view>
-    <view><text>微信账号已安全识别</text><text>{{idHint}}</text><text>无感登录已开启</text></view>
+  <view class="intro-row">
+    <view class="intro"><text class="eyebrow">账号中心</text><text class="page-title">我的空间</text><text class="page-lead">账号资料、订阅统计与数据安全。</text></view>
+    <view class="account-state-chip {{identityReady ? 'active' : ''}}"><view></view><text>{{profileComplete ? '资料已完善' : identityReady ? '微信已连接' : '正在连接'}}</text></view>
   </view>
 
+  <view class="renewal-flow panel" wx:if="{{renewalFlowActive}}">
+    <view class="renewal-flow-head">
+      <view><text>续费处理</text><text>{{renewalFlowIndex}} / {{renewalFlowTotal}}</text></view>
+      <button bindtap="closeRenewalFlow" aria-label="退出续费处理">退出</button>
+    </view>
+    <view class="renewal-flow-progress"><view style="width: {{renewalFlowProgress}}%"></view></view>
+    <view class="renewal-flow-service">
+      <view class="renewal-flow-logo {{renewalFlowCurrent.logoPath ? 'has-logo' : ''}}" style="background: {{renewalFlowCurrent.color}}">
+        <image wx:if="{{renewalFlowCurrent.logoPath}}" src="{{renewalFlowCurrent.logoPath}}" mode="aspectFit" fade-in="{{false}}" />
+        <view wx:else class="service-fallback-icon" aria-hidden="true"><view class="service-fallback-card"><view></view><view></view></view></view>
+      </view>
+      <view class="renewal-flow-copy"><text>{{renewalFlowCurrent.name}}</text><text>{{renewalFlowCurrent.dateText}} · {{renewalFlowCurrent.paymentChannelText}} · {{renewalFlowCurrent.billingCycle === 'yearly' ? '年付' : '月付'}}</text></view>
+      <view class="renewal-flow-price"><text>{{renewalFlowCurrent.amountText}}</text><text>/{{renewalFlowCurrent.cycleText}}</text></view>
+    </view>
+    <view class="renewal-amount-row">
+      <button bindtap="toggleRenewalAmount">{{renewalAmountEditing ? '使用原金额' : '金额有变化'}}</button>
+      <view wx:if="{{renewalAmountEditing}}"><text>{{renewalFlowCurrent.currency === 'USD' ? '$' : '¥'}}</text><input type="digit" value="{{renewalAmountValue}}" bindinput="changeRenewalAmount" focus="{{true}}" /></view>
+    </view>
+    <button class="renewal-primary" data-operation="renew" bindtap="processRenewalFlow" loading="{{actionBusy}}" disabled="{{actionBusy}}">已续费，顺延账期</button>
+    <view class="renewal-secondary-actions">
+      <button data-operation="pause" bindtap="processRenewalFlow" disabled="{{actionBusy}}">暂停订阅</button>
+      <button class="danger" data-operation="cancel" bindtap="processRenewalFlow" disabled="{{actionBusy}}">我已在服务商取消</button>
+    </view>
+    <view class="renewal-postpone"><text>稍后处理（仅移动应用内任务）</text><view><button data-operation="snooze" data-days="1" bindtap="processRenewalFlow" disabled="{{actionBusy}}">1 天</button><button data-operation="snooze" data-days="3" bindtap="processRenewalFlow" disabled="{{actionBusy}}">3 天</button><button data-operation="snooze" data-days="7" bindtap="processRenewalFlow" disabled="{{actionBusy}}">7 天</button></view></view>
+  </view>
+
+  <view class="renewal-flow renewal-complete panel" wx:if="{{renewalFlowComplete}}">
+    <text class="renewal-complete-title">本次续费处理完成</text>
+    <text class="renewal-complete-copy">续费 {{renewalFlowSummary.renewed}} 项 · 暂停 {{renewalFlowSummary.paused}} 项 · 取消 {{renewalFlowSummary.cancelled}} 项 · 延后 {{renewalFlowSummary.postponed}} 项</text>
+    <view><text>预计未来 12 个月减少支出</text><text>{{renewalFlowSummary.savedText}}</text></view>
+    <button bindtap="closeRenewalFlow">完成</button>
+  </view>
+
+  <view class="account-card {{profileComplete ? 'logged-in' : 'logged-out'}}">
+    <block wx:if="{{profileComplete}}">
+      <view class="profile-card-head">
+        <text>微信资料</text>
+        <view><view></view><text>账号已安全绑定</text></view>
+      </view>
+      <view class="profile-summary">
+        <button
+          class="profile-avatar-button"
+          open-type="chooseAvatar"
+          bindchooseavatar="chooseAvatar"
+          aria-label="{{avatarUrl ? '更换头像' : '使用微信头像'}}"
+        >
+          <view class="profile-avatar-frame">
+            <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFit" fade-in="{{false}}"></image>
+            <view wx:else class="profile-avatar-placeholder"></view>
+          </view>
+          <view class="avatar-camera" aria-hidden="true">
+            <view class="avatar-camera-top"></view>
+            <view class="avatar-camera-body"><view></view></view>
+          </view>
+        </button>
+        <view class="profile-main">
+          <text class="profile-name">{{nickname}}</text>
+          <text class="profile-caption">{{avatarUrl ? '订阅数据仅当前微信身份可见' : '点击头像补充微信头像'}}</text>
+          <view class="profile-inline-actions">
+            <input
+              class="nickname-edit-link"
+              type="nickname"
+              value=""
+              maxlength="20"
+              disabled="{{savingProfile}}"
+              cursor-color="transparent"
+              placeholder="修改昵称"
+              placeholder-class="nickname-edit-placeholder"
+              bindchange="authorizeWithNickname"
+            />
+            <text>·</text>
+            <text>{{avatarUrl ? '点击头像可更换' : '使用微信头像'}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="profile-card-footer">
+        <view class="profile-security-note"><view></view><text>微信身份隔离保护已开启，数据仅当前微信可见</text></view>
+      </view>
+    </block>
+    <block wx:else>
+      <text class="login-kicker">可选资料</text>
+      <text class="login-title">完善个人资料（可选）</text>
+      <text class="login-copy">{{identityReady ? '微信身份已无感识别，现在即可管理订阅；昵称和头像仅用于个人中心展示。' : '正在无感连接当前微信身份；昵称和头像仅用于个人中心展示。'}}</text>
+      <input
+        class="login-link"
+        type="nickname"
+        value=""
+        maxlength="20"
+        disabled="{{savingProfile}}"
+        cursor-color="transparent"
+        placeholder="选择微信昵称（可选） →"
+        placeholder-class="login-link-placeholder"
+        bindchange="authorizeWithNickname"
+      />
+      <text class="account-profile-note">不授权昵称和头像，也可以正常使用订阅管理功能。</text>
+    </block>
+  </view>
+
+  <block wx:if="{{identityReady}}">
   <view class="account-stats">
-    <view><text>{{totalCount}}</text><text>全部订阅</text></view>
-    <view><text>{{activeCount}}</text><text>生效中</text></view>
-    <view><text>{{monthlyText}}</text><text>月均支出</text></view>
+    <view class="stat-button {{expandedStat === 'all' ? 'selected' : ''}}" data-stat="all" bindtap="showAccountStat" hover-class="press-feedback" hover-stay-time="80" role="button">
+      <text class="stat-value-line">{{totalCount}}项</text>
+      <text class="stat-label">全部订阅</text>
+      <text class="stat-more">{{expandedStat === 'all' ? '收起 ↑' : '展开 ↓'}}</text>
+    </view>
+    <view class="stat-button {{expandedStat === 'active' ? 'selected' : ''}}" data-stat="active" bindtap="showAccountStat" hover-class="press-feedback" hover-stay-time="80" role="button">
+      <text class="stat-value-line">{{activeCount}}项</text>
+      <text class="stat-label">生效订阅</text>
+      <text class="stat-more">{{expandedStat === 'active' ? '收起 ↑' : '展开 ↓'}}</text>
+    </view>
+    <view class="stat-button {{expandedStat === 'monthly' ? 'selected' : ''}}" data-stat="monthly" bindtap="showAccountStat" hover-class="press-feedback" hover-stay-time="80" role="button">
+      <text class="stat-value-line money-value">¥{{monthlyValueText}}</text>
+      <text class="stat-label">月均支出</text>
+      <text class="stat-more">{{expandedStat === 'monthly' ? '收起 ↑' : '展开 ↓'}}</text>
+    </view>
   </view>
 
-  <view class="privacy-card"><view>锁</view><view><text>独立数据空间</text><text>所有订阅都绑定到当前小程序的微信身份。其他用户只能看到他们自己的数据。</text></view></view>
-  <view class="privacy-card no-phone"><view>隐</view><view><text>不获取手机号</text><text>登录仅使用微信提供的匿名用户标识，不申请昵称、头像或手机号码。</text></view></view>
+  <view class="service-center panel">
+    <view class="service-center-head">
+      <view><text class="eyebrow">服务助理</text><text>续费处理中心</text><text>未来 30 天和需要跟进的订阅集中在这里</text></view>
+      <view class="service-center-count"><text>{{serviceTaskCount}}</text><text>项任务</text></view>
+    </view>
+    <view class="service-center-summary">
+      <view class="urgent {{serviceFilter === 'urgent' ? 'selected' : ''}}" data-tone="urgent" bindtap="filterServiceCenter" hover-class="service-summary-pressed" hover-stay-time="80" role="button"><text>{{serviceCounts.urgent}}</text><text>近期处理</text></view>
+      <view class="upcoming {{serviceFilter === 'upcoming' ? 'selected' : ''}}" data-tone="upcoming" bindtap="filterServiceCenter" hover-class="service-summary-pressed" hover-stay-time="80" role="button"><text>{{serviceCounts.upcoming}}</text><text>30 天内</text></view>
+      <view class="follow-up {{serviceFilter === 'follow-up' ? 'selected' : ''}}" data-tone="follow-up" bindtap="filterServiceCenter" hover-class="service-summary-pressed" hover-stay-time="80" role="button"><text>{{serviceCounts.followUp}}</text><text>状态跟进</text></view>
+    </view>
+    <button class="service-center-toggle" bindtap="toggleServiceCenter" disabled="{{loading}}">
+      <view>
+        <text>{{serviceCenterExpanded ? '收起任务' : serviceFocusTitle}}</text>
+        <text>{{serviceCenterExpanded ? '处理结果会自动同步到总览、日历和分析' : serviceFocusCopy}}</text>
+      </view>
+      <text>{{serviceCenterExpanded ? '↑' : '↓'}}</text>
+    </button>
+    <view class="service-task-list" wx:if="{{serviceCenterExpanded && serviceItems.length}}">
+      <block wx:for="{{serviceItems}}" wx:key="_id">
+      <view class="service-task">
+        <view class="service-task-logo {{item.logoPath ? 'has-logo' : ''}}" style="background: {{item.color}}">
+          <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+          <view wx:else class="service-fallback-icon" aria-hidden="true"><view class="service-fallback-card"><view></view><view></view></view></view>
+        </view>
+        <view class="service-task-copy">
+          <view><text>{{item.name}}</text><text class="{{item.tone}}">{{item.label}}</text></view>
+          <text>{{item.copy}}</text>
+          <text wx:if="{{item.priceChangeText}}">最近调价 · {{item.priceChangedDateText}} {{item.priceChangeText}}</text>
+          <text class="service-task-deadline {{item.tone}}">{{item.deadlineText}}</text>
+        </view>
+        <view class="service-task-actions" wx:if="{{item.status === 'paused'}}">
+          <picker mode="date" start="{{item.restoreStartDate}}" value="{{item.restoreStartDate}}" data-id="{{item._id}}" bindchange="restorePausedSubscription">
+            <view class="service-task-restore">选日期恢复</view>
+          </picker>
+          <button data-id="{{item._id}}" bindtap="openServiceTask" disabled="{{actionBusy}}">删除</button>
+        </view>
+        <view class="service-task-actions" wx:else>
+          <button class="official" wx:if="{{item.officialActionAvailable}}" data-id="{{item._id}}" catchtap="toggleServiceAction" disabled="{{actionBusy}}">去处理</button>
+          <button class="manage" data-id="{{item._id}}" catchtap="openServiceTask" disabled="{{actionBusy}}">{{item.actionText}}</button>
+        </view>
+      </view>
+      <view class="service-action-guide" wx:if="{{serviceActionId === item._id}}">
+        <view class="service-action-guide-head">
+          <view><text>前往官方渠道处理</text><text>{{serviceActionGuide.name}} · 页面路径可能随服务商调整</text></view>
+          <button data-id="{{item._id}}" bindtap="toggleServiceAction" aria-label="收起操作指引">×</button>
+        </view>
+        <view class="service-action-section">
+          <text>关闭自动续费</text>
+          <view wx:for="{{serviceActionGuide.cancelSteps}}" wx:for-item="step" wx:key="*this"><text>{{index + 1}}</text><text>{{step}}</text></view>
+        </view>
+        <view class="service-action-section">
+          <text>重新续费</text>
+          <view wx:for="{{serviceActionGuide.renewSteps}}" wx:for-item="step" wx:key="*this"><text>{{index + 1}}</text><text>{{step}}</text></view>
+        </view>
+        <view class="service-action-buttons">
+          <button bindtap="copyServiceAction">复制步骤</button>
+          <button class="primary" bindtap="openOfficialService">{{serviceActionGuide.directSupported ? '去官方小程序' : '查看操作步骤'}}</button>
+        </view>
+        <view class="service-action-confirm" wx:if="{{serviceActionConfirming}}">
+          <text>回来后，请确认实际结果</text>
+          <view><button data-result="renew" bindtap="confirmServiceAction">已续费</button><button data-result="cancel" bindtap="confirmServiceAction">已关闭自动续费</button><button data-result="none" bindtap="confirmServiceAction">暂未完成</button></view>
+        </view>
+      </view>
+      </block>
+    </view>
+    <view class="service-task-empty" wx:if="{{serviceCenterExpanded && !serviceItems.length}}"><text>目前不用处理</text><text>{{serviceFilter ? '当前分类暂时没有需要处理的订阅。' : '未来 30 天没有续费任务，也没有暂停或计划取消的订阅。'}}</text></view>
+  </view>
+
+  <view class="recent-actions panel">
+    <view class="recent-actions-head">
+      <view><text class="eyebrow">处理记录</text><text>最近操作</text><text>续费和状态变更集中留痕，方便随时核对</text></view>
+      <view class="recent-actions-count"><text>{{recentActionCount}}</text><text>条记录</text></view>
+    </view>
+    <button class="recent-actions-toggle" bindtap="toggleRecentActions" hover-class="press-feedback" hover-stay-time="80" disabled="{{loading}}">
+      {{recentActionsExpanded ? '收起记录 ↑' : recentActionCount ? '查看最近操作 ↓' : '暂无处理记录'}}
+    </button>
+    <view class="recent-actions-list" wx:if="{{recentActionsExpanded && recentActionItems.length}}">
+      <view class="recent-action-row" wx:for="{{recentActionItems}}" wx:key="_id">
+        <view class="recent-action-logo {{item.logoPath ? 'has-logo' : ''}}" style="background: {{item.color}}">
+          <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+          <view wx:else class="recent-action-fallback"><view></view><view></view></view>
+        </view>
+        <view class="recent-action-copy"><text>{{item.name}}</text><text class="{{item.tone}}">{{item.actionText}}</text></view>
+        <text class="recent-action-date">{{item.dateText}}</text>
+      </view>
+    </view>
+    <view class="recent-actions-empty" wx:if="{{recentActionsExpanded && !recentActionItems.length}}">完成续费、暂停、恢复、取消或延后处理后，记录会显示在这里。</view>
+  </view>
+
+  <view
+    class="history-entry panel {{expandedStat === 'history' ? 'selected' : ''}}"
+    data-stat="history"
+    bindtap="showAccountStat"
+    hover-class="press-feedback"
+    role="button"
+  >
+    <view class="history-entry-icon">↺</view>
+    <view><text>历史记录</text><text>已取消并归档的订阅单独保存在这里</text></view>
+    <view class="history-entry-side"><text>{{historyCount}} 项</text><text>{{expandedStat === 'history' ? '收起 ↑' : '查看 ›'}}</text></view>
+  </view>
+
+  <view class="account-stat-detail panel {{expandedStat === 'history' ? 'history-detail' : ''}}" wx:if="{{expandedStat}}">
+    <view class="account-stat-detail-head">
+      <view><text>{{statDetailTitle}}</text><text>{{statDetailCopy}}</text></view>
+      <text>{{statDetailValue}}</text>
+    </view>
+    <view class="account-stat-detail-list" wx:if="{{statDetailItems.length}}">
+      <view class="account-stat-detail-row {{expandedStat === 'history' ? 'history-row' : ''}}" wx:for="{{statDetailItems}}" wx:key="_id">
+        <view class="stat-detail-logo {{item.logoPath ? 'has-logo' : ''}}" style="background: {{item.color}}">
+          <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+          <view wx:else class="stat-detail-fallback"><view></view><view></view></view>
+        </view>
+        <view class="stat-detail-copy"><text>{{item.name}}</text><text>{{item.metaText}}</text></view>
+        <view class="stat-detail-side {{expandedStat === 'history' ? 'history-side' : ''}}">
+          <text class="stat-detail-value">{{item.valueText}}</text>
+          <view class="history-actions" wx:if="{{expandedStat === 'history'}}">
+            <button data-id="{{item._id}}" data-operation="restore" bindtap="manageHistorySubscription" disabled="{{actionBusy}}">恢复</button>
+            <button class="danger" data-id="{{item._id}}" data-operation="delete" bindtap="manageHistorySubscription" disabled="{{actionBusy}}">删除</button>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="account-stat-detail-empty" wx:else>当前没有符合条件的订阅。</view>
+  </view>
+
+  <view class="reminder-center panel">
+    <view class="reminder-center-head">
+      <view><text class="eyebrow">提醒状态</text><text>提醒中心</text></view>
+      <text>{{activeCount}} 项生效订阅</text>
+    </view>
+    <view class="reminder-empty" hidden="{{loading || reminderTotal}}">
+      <text>暂无生效中的订阅</text>
+      <text>添加订阅后，可在这里统一查看微信提醒状态。</text>
+    </view>
+    <view class="reminder-summary">
+      <view class="reminder-summary-item enabled {{reminderFilter === 'enabled' ? 'selected' : ''}}" data-state="enabled" bindtap="filterReminders" hover-class="reminder-summary-pressed" hover-stay-time="80" role="button"><text>{{reminderCounts.enabled}}</text><text>已开启提醒</text></view>
+      <view class="reminder-summary-item unauthorized {{reminderFilter === 'unauthorized' ? 'selected' : ''}}" data-state="unauthorized" bindtap="filterReminders" hover-class="reminder-summary-pressed" hover-stay-time="80" role="button"><text>{{reminderCounts.unauthorized}}</text><text>尚未授权</text></view>
+      <view class="reminder-summary-item sent {{reminderFilter === 'sent' ? 'selected' : ''}}" data-state="sent" bindtap="filterReminders" hover-class="reminder-summary-pressed" hover-stay-time="80" role="button"><text>{{reminderCounts.sent}}</text><text>已发送、需要重新开启</text></view>
+      <view class="reminder-summary-item failed {{reminderFilter === 'failed' ? 'selected' : ''}}" data-state="failed" bindtap="filterReminders" hover-class="reminder-summary-pressed" hover-stay-time="80" role="button"><text>{{reminderCounts.failed}}</text><text>提醒失败</text></view>
+    </view>
+    <view class="reminder-filter-bar" wx:if="{{reminderFilter}}">
+      <text>正在查看：{{reminderFilterLabel}}</text>
+      <text bindtap="clearReminderFilter" role="button">显示全部 ×</text>
+    </view>
+    <view class="reminder-filter-empty" wx:if="{{reminderFilter && !visibleReminderItems.length}}">
+      当前没有“{{reminderFilterLabel}}”的订阅
+    </view>
+    <view class="reminder-list" hidden="{{loading || !visibleReminderItems.length}}">
+      <view class="reminder-item" wx:for="{{visibleReminderItems}}" wx:key="_id">
+        <view class="reminder-service-mark {{item.logoPath ? 'has-logo' : ''}}" style="background: {{item.color}}">
+          <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+          <view wx:else class="service-fallback-icon" aria-hidden="true">
+            <view class="service-fallback-card"><view></view><view></view></view>
+          </view>
+        </view>
+        <view class="reminder-item-copy">
+          <view><text>{{item.name}}</text><text>{{item.dateText}}续费</text></view>
+          <text>{{item.reminderDescription}}</text>
+        </view>
+        <view class="reminder-item-side">
+          <text class="reminder-state {{item.reminderState}}">{{item.reminderStatusText}}</text>
+          <button
+            wx:if="{{item.reminderState !== 'enabled'}}"
+            data-id="{{item._id}}"
+            bindtap="authorizeReminder"
+          >{{item.reminderActionText}}</button>
+        </view>
+      </view>
+    </view>
+    <view class="reminder-warning">
+      <view class="warning-lamp" aria-hidden="true">
+        <view class="warning-lamp-glow"></view>
+        <view class="warning-lamp-base"></view>
+      </view>
+      <view>
+        <text>一次授权仅发送一次</text>
+        <text>每项订阅需要单独开启。到达提醒日期后只发送一次，发送成功或失败后都需要你再次开启，系统不会按月统一推送。</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="export-center panel">
+    <view class="export-center-head">
+      <view><text class="eyebrow">数据导出</text><text>导出中心</text></view>
+      <text>图片 / CSV</text>
+    </view>
+    <text class="export-center-copy">生成适合保存和分享的订阅报告，数据只在你的手机本地整理。</text>
+    <view class="export-options">
+      <view class="export-main-card" data-report="all" bindtap="exportReport" hover-class="export-card-pressed" role="button">
+        <view class="export-icon skeuo-stack" aria-hidden="true">
+          <view class="skeuo-stack-back"></view>
+          <view class="skeuo-stack-middle"></view>
+          <view class="skeuo-stack-front"><view></view><view></view></view>
+        </view>
+        <view class="export-main-copy"><text>我的全部订阅</text><text>完整服务、续费日期与提醒状态</text></view>
+        <view class="export-main-side">
+          <text class="export-main-count">{{exportTotalCount}} 项记录</text>
+          <text class="export-go">导出 ↗</text>
+        </view>
+      </view>
+      <view class="export-sub-grid">
+        <view class="export-sub-card monthly" data-report="monthly" bindtap="exportReport" hover-class="export-card-pressed" role="button">
+          <view class="export-sub-head">
+            <view class="export-icon skeuo-calendar" aria-hidden="true">
+              <view class="skeuo-calendar-sheet">
+                <view class="skeuo-calendar-rings"><view></view><view></view></view>
+                <view class="skeuo-calendar-grid"><view></view><view></view><view></view><view></view></view>
+              </view>
+            </view>
+            <text>导出 ↗</text>
+          </view>
+          <text class="export-sub-title">本月支出报告</text>
+          <text class="export-sub-value">{{exportMonthlyText}}</text>
+          <text class="export-sub-copy">按本月计划续费金额统计</text>
+        </view>
+        <view class="export-sub-card annual" data-report="annual" bindtap="exportReport" hover-class="export-card-pressed" role="button">
+          <view class="export-sub-head">
+            <view class="export-icon skeuo-ledger" aria-hidden="true">
+              <view class="skeuo-ledger-book">
+                <view class="skeuo-ledger-spine"></view>
+                <view class="skeuo-ledger-bars"><view></view><view></view><view></view></view>
+              </view>
+            </view>
+            <text>导出 ↗</text>
+          </view>
+          <text class="export-sub-title">年度订阅账单</text>
+          <text class="export-sub-value">{{exportAnnualText}}</text>
+          <text class="export-sub-copy">按当前生效订阅年度折算</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="privacy-title"><text class="eyebrow">隐私与数据</text><text>你的数据边界</text></view>
+  <view class="privacy-card">
+    <view class="privacy-icon skeuo-lock" aria-hidden="true">
+      <view class="skeuo-lock-shackle"></view>
+      <view class="skeuo-lock-body"><view></view></view>
+    </view>
+    <view><text>独立数据空间</text><text>所有订阅都绑定到当前小程序的微信身份。其他用户只能看到他们自己的数据。</text></view>
+  </view>
+  <view class="privacy-card no-phone">
+    <view class="privacy-icon skeuo-shield" aria-hidden="true">
+      <view class="skeuo-shield-body"><view></view></view>
+    </view>
+    <view><text>资料完全自愿</text><text>无需授权昵称、头像或手机号即可使用；仅在你主动选择后保存昵称和头像，不获取手机号、通讯录或其他微信资料。</text></view>
+  </view>
 
   <view class="settings-section panel">
-    <view><text>数据管理</text><text>清空当前微信账号下的全部订阅</text></view>
-    <button bindtap="clearAll">清空数据</button>
+    <view class="settings-action-row">
+      <view><text>本机缓存</text><text>清除临时列表和头像预览，不影响云端数据</text></view>
+      <button
+        class="cache-action"
+        bindtap="clearCache"
+        loading="{{clearingCache}}"
+        disabled="{{clearingCache}}"
+      >清除缓存</button>
+    </view>
+    <view class="settings-action-row danger-row">
+      <view><text>云端数据</text><text>永久清空当前微信账号下的全部订阅</text></view>
+      <button class="danger-action" bindtap="clearAll">清空数据</button>
+    </view>
+  </view>
+  <canvas type="2d" id="reportCanvas" class="report-canvas"></canvas>
+  </block>
+
+  <view class="feedback-card panel">
+    <view class="feedback-icon" aria-hidden="true">
+      <view class="feedback-bubble"><view></view><view></view><view></view></view>
+    </view>
+    <view class="feedback-copy">
+      <text>问题反馈</text>
+      <text>遇到异常或有功能建议，可以直接告诉我们。</text>
+    </view>
+    <button open-type="feedback">去反馈</button>
   </view>
 </view>

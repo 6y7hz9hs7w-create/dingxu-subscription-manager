@@ -6,21 +6,29 @@
     "pages/settings/settings",
     "pages/add/add"
   ],
+  "__usePrivacyCheck__": true,
   "window": {
-    "backgroundColor": "#f7f5ee",
+    "backgroundColor": "#f3f5fa",
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#f7f5ee",
+    "navigationBarBackgroundColor": "#f3f5fa",
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "订序"
   },
   "tabBar": {
-    "backgroundColor": "#fffefa",
+    "custom": true,
+    "backgroundColor": "#ffffff",
     "borderStyle": "black",
-    "color": "#84908a",
-    "selectedColor": "#24594a",
+    "color": "#7b8499",
+    "selectedColor": "#3451c7",
     "list": [
       { "pagePath": "pages/index/index", "text": "总览" },
       { "pagePath": "pages/calendar/calendar", "text": "日历" },
+      {
+        "pagePath": "pages/add/add",
+        "text": "",
+        "iconPath": "assets/tabbar/add.png",
+        "selectedIconPath": "assets/tabbar/add-selected.png"
+      },
       { "pagePath": "pages/insights/insights", "text": "分析" },
       { "pagePath": "pages/settings/settings", "text": "我的" }
     ]

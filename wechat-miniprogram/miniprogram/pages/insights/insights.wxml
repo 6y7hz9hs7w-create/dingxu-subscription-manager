@@ -1,24 +1,184 @@
 <view class="page insights-page">
-  <view class="intro"><text class="eyebrow">SPENDING INSIGHTS</text><text class="page-title">消费分析</text><text class="page-lead">把每一笔会员支出看清楚。</text></view>
+  <view class="intro">
+    <text class="eyebrow">消费概览</text>
+    <text class="page-title">消费分析</text>
+    <text class="page-lead">每月花多少、钱花在哪、什么时候扣款，直接看清。</text>
+  </view>
 
-  <view class="summary-grid">
-    <view class="summary-card primary"><text>月均支出</text><text>{{monthlyText}}</text><text>按当前账单周期折算</text></view>
-    <view class="summary-card"><text>年度预估</text><text>{{yearlyText}}</text><text>未来 12 个月预计</text></view>
-    <view class="summary-card"><text>生效订阅</text><text>{{activeCount}} 项</text><text>仅统计生效项目</text></view>
+  <view class="panel spending-summary">
+    <view class="summary-top">
+      <view>
+        <text class="summary-label">每月固定支出</text>
+        <text class="summary-value">{{monthlyText}}</text>
+      </view>
+      <view class="active-pill"><text>{{activeCount}}</text><text>项生效</text></view>
+    </view>
+    <text class="summary-explain">月付金额与年付金额 ÷ 12 后相加</text>
+    <view class="summary-context">
+      <view><text>平均每天</text><text>{{dailyAverageText}}</text></view>
+      <view><text>平均每项</text><text>{{averagePerItemText}}/月</text></view>
+    </view>
+    <view class="summary-grid">
+      <view>
+        <text>一年预计花费</text>
+        <text>{{yearlyText}}</text>
+        <text>假设当前订阅持续一年</text>
+      </view>
+      <view>
+        <text>最近一次续费</text>
+        <text>{{nextRenewalText}}</text>
+        <text>{{nextRenewalDateText}} · {{nextRenewalCount}} 笔</text>
+      </view>
+    </view>
+    <view class="next-renewal-names" wx:if="{{nextRenewalCount}}">
+      <text>即将续费</text><text>{{nextRenewalNames}}</text>
+    </view>
+  </view>
+
+  <view class="panel price-change-panel" wx:if="{{priceChangeCount}}">
+    <view class="panel-heading">
+      <view><text class="eyebrow">价格变化</text><text>最近调价影响</text></view>
+      <view class="heading-total"><text>每月合计变化</text><text>{{priceChangeMonthlyText}}</text></view>
+    </view>
+    <text class="panel-description">按月均口径比较调整前后价格，年付订阅已自动除以 12。</text>
+    <view class="price-change-list">
+      <view class="price-change-row" wx:for="{{priceChanges}}" wx:key="_id">
+        <view class="price-change-service">
+          <view class="cost-logo">
+            <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+            <view wx:else class="cost-logo-fallback"><view></view><view></view></view>
+          </view>
+          <view><text>{{item.name}}</text><text>{{item.dateText}} · {{item.previousText}} → {{item.currentText}}</text></view>
+        </view>
+        <text class="price-change-delta {{item.direction}}">{{item.deltaText}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="panel trend-panel">
+    <view class="panel-heading">
+      <view><text class="eyebrow">续费趋势</text><text>未来 6 个月扣款</text></view>
+      <view class="heading-total"><text>合计</text><text>{{sixMonthTotalText}}</text></view>
+    </view>
+    <text class="panel-description">按实际续费日期统计，柱子越高表示当月需要支付得越多。</text>
+    <view class="trend-chart" wx:if="{{trendHasData}}">
+      <view
+        class="trend-column {{selectedTrendIndex === index ? 'selected' : ''}}"
+        wx:for="{{trend}}"
+        wx:key="index"
+        data-index="{{index}}"
+        bindtap="selectTrendMonth"
+        hover-class="press-feedback"
+        hover-stay-time="80"
+        role="button"
+      >
+        <text class="trend-value">{{item.amountText}}</text>
+        <view class="trend-track">
+          <view class="trend-bar {{item.amountCents ? '' : 'zero'}}" style="height: {{item.amountCents ? item.height : 3}}%"></view>
+        </view>
+        <text class="trend-label">{{item.label}}</text>
+        <view class="trend-dot"></view>
+      </view>
+    </view>
+    <view class="empty-state compact-chart" wx:else>
+      <view class="empty-icon">▥</view>
+      <text class="empty-title">未来 6 个月暂无计划扣款</text>
+      <text class="empty-copy">添加生效订阅后，会在这里显示每月续费变化。</text>
+    </view>
+
+    <view class="trend-detail" wx:if="{{trendHasData}}">
+      <view class="trend-detail-head">
+        <view><text>{{selectedTrendLabel}}</text><text>{{selectedTrendCount}} 笔续费</text></view>
+        <text>{{selectedTrendAmountText}}</text>
+      </view>
+      <view class="trend-entry-list" wx:if="{{selectedTrendEntries.length}}">
+        <view class="trend-entry" wx:for="{{selectedTrendEntries}}" wx:key="key">
+          <view><text>{{item.name}}</text><text>{{item.dateText}}</text></view>
+          <text>{{item.amountText}}</text>
+        </view>
+      </view>
+      <text class="trend-empty-copy" wx:else>这个月没有计划扣款。</text>
+    </view>
   </view>
 
   <view class="panel breakdown">
-    <view class="breakdown-head"><view><text class="eyebrow">BREAKDOWN</text><text>消费结构</text></view><text>月均口径</text></view>
-    <view class="loading" wx:if="{{loading}}">正在生成分析…</view>
-    <view class="category-list" wx:elif="{{categories.length}}">
-      <view class="category-row" wx:for="{{categories}}" wx:key="name">
-        <view class="category-title"><view style="background: {{item.color}}"></view><text>{{item.name}}</text><text>{{item.percentage}}%</text></view>
-        <view class="track"><view style="width: {{item.percentage}}%; background: {{item.color}}"></view></view>
-        <text class="category-amount">{{item.amountText}}</text>
-      </view>
+    <view class="panel-heading breakdown-heading">
+      <view><text class="eyebrow">支出去向</text><text>每月的钱花在哪</text></view>
+      <text class="scope-pill">月均口径</text>
     </view>
-    <view class="empty-state" wx:else><view class="empty-icon">◔</view><text class="empty-title">还没有可分析的消费</text><text class="empty-copy">添加订阅后，会自动计算支出和分类占比。</text><button class="secondary-button" bindtap="addSubscription">添加订阅</button></view>
+    <view class="loading" wx:if="{{loading}}">正在生成分析…</view>
+    <view wx:elif="{{categories.length}}">
+      <view class="breakdown-summary">
+        <view class="breakdown-summary-main">
+          <text>支出最多</text>
+          <text>{{topCategoryName}}</text>
+        </view>
+        <view class="breakdown-summary-values">
+          <text>{{topCategoryPercentageText}}</text>
+          <text>{{topCategoryAmountText}}/月</text>
+        </view>
+      </view>
+      <view class="category-stack">
+        <view
+          class="{{item.percentage < 12 ? 'compact-segment' : ''}}"
+          wx:for="{{categories}}"
+          wx:key="name"
+          style="width: {{item.percentage}}%; background: {{item.color}}"
+        >
+          <text wx:if="{{item.percentage >= 12}}">{{item.percentage}}%</text>
+          <text wx:else class="compact-label">{{item.percentage}}%</text>
+        </view>
+      </view>
+      <view class="category-list">
+        <view class="category-row" wx:for="{{categories}}" wx:key="name">
+          <view class="category-name">
+            <view class="category-dot" style="background: {{item.color}}"></view>
+            <view class="category-copy">
+              <text>{{item.name}}</text>
+              <text>{{item.servicesText}}</text>
+            </view>
+          </view>
+          <text class="category-amount">{{item.amountText}}/月</text>
+        </view>
+      </view>
+      <text class="breakdown-footnote">年付订阅按总价 ÷ 12 折算为月均金额，便于比较长期支出。</text>
+    </view>
+    <view class="empty-state" wx:else>
+      <view class="empty-icon">◔</view>
+      <text class="empty-title">还没有可分析的消费</text>
+      <text class="empty-copy">添加订阅后，会自动计算支出和分类占比。</text>
+      <button class="secondary-button" bindtap="addSubscription">添加订阅</button>
+    </view>
   </view>
 
-  <view class="advice"><view>✦</view><view><text>订序建议</text><text wx:if="{{activeCount}}">定期检查使用频率，当前预计每月可省 {{savingText}}。</text><text wx:else>从零开始记录你的订阅，分析只使用你自己添加的数据。</text></view></view>
+  <view class="panel subscription-costs" wx:if="{{topSubscriptions.length}}">
+    <view class="panel-heading">
+      <view><text class="eyebrow">单项成本</text><text>每项订阅占多少</text></view>
+      <text class="scope-pill">{{activeCount}} 项</text>
+    </view>
+    <text class="panel-description">按每月等价支出从高到低排列，长条越长表示占每月支出越高。</text>
+    <view class="cost-list">
+      <view class="cost-row" wx:for="{{topSubscriptions}}" wx:key="_id">
+        <view class="cost-head">
+          <view class="cost-service">
+            <view class="cost-logo">
+              <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+              <view wx:else class="cost-logo-fallback"><view></view><view></view></view>
+            </view>
+            <view><text>{{item.name}}</text><text>{{item.cycleText}}</text></view>
+          </view>
+          <view class="cost-values"><text>{{item.monthlyText}}</text><text>{{item.yearlyText}}</text></view>
+        </view>
+        <view class="cost-track"><view style="width: {{item.percentage}}%"></view></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="analysis-note">
+    <view>i</view>
+    <view>
+      <text>这些数字怎么算</text>
+      <text>月均支出用于比较长期负担；未来扣款按实际支付日期展示，所以年付会员会集中出现在续费月份。</text>
+    </view>
+  </view>
 </view>

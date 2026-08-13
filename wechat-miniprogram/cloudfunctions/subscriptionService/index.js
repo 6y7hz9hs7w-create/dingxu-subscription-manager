@@ -7,11 +7,7 @@ const db = cloud.database();
 const subscriptions = db.collection("subscriptions");
 const PROFILE_RECORD_TYPE = "profile";
 const SUBSCRIPTION_RECORD_TYPE = "subscription";
-const WEB_BINDING_RECORD_TYPE = "web_binding";
-const WEB_SESSION_RECORD_TYPE = "web_session";
 const MAX_SUBSCRIPTIONS = 100;
-const WEB_BINDING_TTL_MS = 10 * 60 * 1000;
-const WEB_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 // 在小程序后台申请“续费提醒”订阅消息模板后填写。模板 ID 不是密钥，可以随代码部署。
 const RENEWAL_TEMPLATE_ID = "Ow01SaqWnK-8zdsA9-PxYXcMD4zMP58zZ5QhFvrCu3k";
 // 模板 5171“会员到期提醒”只包含到期时间和到期说明。
@@ -37,9 +33,6 @@ exports.main = async (event = {}) => {
       if (OPENID) return { ok: false, error: "定时任务不能由客户端触发" };
       return sendRenewalReminders();
     }
-    if (event.action === "webInternal") {
-      return handleWebInternal(event.internalSecret, event.request);
-    }
     if (!OPENID) return { ok: false, error: "无法识别当前微信用户" };
 
     switch (event.action) {
@@ -49,8 +42,6 @@ exports.main = async (event = {}) => {
         return { ok: true, templateId: RENEWAL_TEMPLATE_ID };
       case "saveProfile":
         return saveProfile(OPENID, event.profile);
-      case "updatePreferences":
-        return updatePreferences(OPENID, event.preferences);
       case "avatarUploadConfig":
         return { ok: true, pathPrefix: avatarPathPrefix(OPENID) };
       case "subscriptionIconUploadConfig":
@@ -70,13 +61,14 @@ exports.main = async (event = {}) => {
       case "enableReminder":
         return enableReminder(OPENID, event.id);
       case "updateStatus":
-        return updateStatus(OPENID, event.id, event.operation, event.reminderEnabled, event.snoozeDays);
+        return updateStatus(OPENID, event.id, event.operation, event.reminderEnabled, event.snoozeDays, {
+          expectedNextChargeDate: event.expectedNextChargeDate,
+          nextChargeDate: event.nextChargeDate,
+        });
       case "delete":
         return deleteSubscription(OPENID, event.id);
       case "clearAll":
         return clearAll(OPENID);
-      case "confirmWebBinding":
-        return confirmWebBinding(OPENID, event.code);
       default:
         return { ok: false, error: "不支持的操作" };
     }
@@ -91,156 +83,6 @@ exports.main = async (event = {}) => {
     return { ok: false, error: "服务暂时不可用，请稍后再试" };
   }
 };
-
-function hashWebToken(value) {
-  return crypto.createHash("sha256").update(String(value || "")).digest("hex");
-}
-
-function randomWebToken(bytes = 32) {
-  return crypto.randomBytes(bytes).toString("base64url");
-}
-
-function secureEqual(left, right) {
-  const first = Buffer.from(String(left || ""));
-  const second = Buffer.from(String(right || ""));
-  return first.length === second.length && crypto.timingSafeEqual(first, second);
-}
-
-function validFutureIso(value) {
-  const timestamp = Date.parse(String(value || ""));
-  return Number.isFinite(timestamp) && timestamp > Date.now();
-}
-
-async function handleWebInternal(secret, request) {
-  const expectedSecret = String(process.env.WEB_SYNC_INTERNAL_SECRET || "");
-  if (expectedSecret.length < 32 || !secureEqual(secret, expectedSecret)) {
-    return { ok: false, error: "网页同步服务未授权" };
-  }
-  const action = request && request.action;
-  if (action === "createBinding") return createWebBinding();
-  if (action === "checkBinding") return checkWebBinding(request.requestToken);
-  if (action === "session") return handleWebSession(request.sessionToken, request.request);
-  return { ok: false, error: "不支持的网页同步操作" };
-}
-
-async function createWebBinding() {
-  const requestToken = randomWebToken();
-  let code = "";
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    const candidate = String(crypto.randomInt(0, 100000000)).padStart(8, "0");
-    const existing = await subscriptions.where({
-      code: candidate,
-      recordType: WEB_BINDING_RECORD_TYPE,
-      status: "pending",
-    }).limit(1).get();
-    if (!existing.data.length) {
-      code = candidate;
-      break;
-    }
-  }
-  if (!code) throw new Error("binding code unavailable");
-  const expiresAt = new Date(Date.now() + WEB_BINDING_TTL_MS).toISOString();
-  await subscriptions.add({ data: {
-    code,
-    createdAt: db.serverDate(),
-    expiresAt,
-    recordType: WEB_BINDING_RECORD_TYPE,
-    requestTokenHash: hashWebToken(requestToken),
-    status: "pending",
-  } });
-  return { ok: true, code, expiresAt, requestToken };
-}
-
-async function confirmWebBinding(ownerOpenid, inputCode) {
-  const code = String(inputCode || "").replace(/\D/g, "").slice(0, 8);
-  if (code.length !== 8) return { ok: false, error: "请输入 8 位网页绑定码" };
-  const result = await subscriptions.where({
-    code,
-    recordType: WEB_BINDING_RECORD_TYPE,
-    status: "pending",
-  }).limit(1).get();
-  const binding = result.data[0];
-  if (!binding || !validFutureIso(binding.expiresAt)) {
-    if (binding) await subscriptions.doc(binding._id).remove().catch(() => {});
-    return { ok: false, error: "绑定码无效或已过期，请在网页重新生成" };
-  }
-  await subscriptions.doc(binding._id).update({ data: {
-    confirmedAt: db.serverDate(),
-    ownerOpenid,
-    status: "confirmed",
-  } });
-  return { ok: true };
-}
-
-async function checkWebBinding(requestToken) {
-  const tokenHash = hashWebToken(requestToken);
-  const result = await subscriptions.where({
-    recordType: WEB_BINDING_RECORD_TYPE,
-    requestTokenHash: tokenHash,
-  }).limit(1).get();
-  const binding = result.data[0];
-  if (!binding || !validFutureIso(binding.expiresAt)) {
-    if (binding) await subscriptions.doc(binding._id).remove().catch(() => {});
-    return { ok: false, error: "绑定请求已过期，请重新生成" };
-  }
-  if (binding.status !== "confirmed" || !binding.ownerOpenid) {
-    return { ok: true, status: "pending" };
-  }
-  const sessionToken = randomWebToken();
-  const expiresAt = new Date(Date.now() + WEB_SESSION_TTL_MS).toISOString();
-  await subscriptions.add({ data: {
-    createdAt: db.serverDate(),
-    expiresAt,
-    ownerOpenid: binding.ownerOpenid,
-    recordType: WEB_SESSION_RECORD_TYPE,
-    sessionTokenHash: hashWebToken(sessionToken),
-  } });
-  await subscriptions.doc(binding._id).remove();
-  return { ok: true, status: "confirmed", sessionToken, expiresAt };
-}
-
-async function handleWebSession(sessionToken, request) {
-  const result = await subscriptions.where({
-    recordType: WEB_SESSION_RECORD_TYPE,
-    sessionTokenHash: hashWebToken(sessionToken),
-  }).limit(1).get();
-  const session = result.data[0];
-  if (!session || !session.ownerOpenid || !validFutureIso(session.expiresAt)) {
-    if (session) await subscriptions.doc(session._id).remove().catch(() => {});
-    return { ok: false, error: "网页登录已过期，请重新绑定", authExpired: true };
-  }
-  const action = request && request.action;
-  if (action === "bootstrap") {
-    const [account, list] = await Promise.all([
-      login(session.ownerOpenid),
-      listSubscriptions(session.ownerOpenid),
-    ]);
-    return { ok: true, user: account.user, subscriptions: list.subscriptions };
-  }
-  if (action === "logout") {
-    await subscriptions.doc(session._id).remove();
-    return { ok: true };
-  }
-  if (action === "updateStatus") {
-    const update = await updateStatus(
-      session.ownerOpenid,
-      request.id,
-      request.operation,
-      false,
-      request.snoozeDays,
-    );
-    if (!update.ok) return update;
-    const list = await listSubscriptions(session.ownerOpenid);
-    return { ok: true, subscription: update.subscription, subscriptions: list.subscriptions };
-  }
-  if (action === "delete") {
-    const removed = await deleteSubscription(session.ownerOpenid, request.id);
-    if (!removed.ok) return removed;
-    const list = await listSubscriptions(session.ownerOpenid);
-    return { ok: true, id: removed.id, subscriptions: list.subscriptions };
-  }
-  return { ok: false, error: "当前网页版本不支持此操作" };
-}
 
 async function listSubscriptions(ownerOpenid) {
   const records = await fetchAll(subscriptions.where({
@@ -407,7 +249,6 @@ async function addSubscription(ownerOpenid, input) {
       updatedAt: db.serverDate(),
     }),
   });
-  await recordRetention(ownerOpenid, "activation_3").catch(() => {});
   return {
     ok: true,
     id: result._id,
@@ -429,6 +270,7 @@ async function updateSubscription(ownerOpenid, id, input) {
   );
   const data = {
     amountCents: item.amountCents,
+    billingAnchorDay: item.billingAnchorDay,
     billingCycle: item.billingCycle,
     category: item.category,
     color: item.color,
@@ -446,6 +288,10 @@ async function updateSubscription(ownerOpenid, id, input) {
     sourceAmountCents: item.sourceAmountCents,
     updatedAt: db.serverDate(),
   };
+  if (Number(current.amountCents) !== item.amountCents) {
+    data.previousAmountCents = Number(current.amountCents || 0);
+    data.priceChangedAt = chinaDateKey();
+  }
   if (reminderScheduleChanged) {
     data.lastReminderForDate = "";
     data.reminderFailureCode = "";
@@ -483,7 +329,6 @@ async function enableReminder(ownerOpenid, id) {
       updatedAt: db.serverDate(),
     },
   });
-  await recordRetention(ownerOpenid, "reminder_enabled").catch(() => {});
   return {
     ok: true,
     subscription: publicSubscription(Object.assign({}, current, {
@@ -495,7 +340,7 @@ async function enableReminder(ownerOpenid, id) {
   };
 }
 
-async function updateStatus(ownerOpenid, id, operation, reminderEnabled, snoozeDays) {
+async function updateStatus(ownerOpenid, id, operation, reminderEnabled, snoozeDays, options = {}) {
   if (typeof id !== "string" || !id || !["cancel", "pause", "restore", "renew", "snooze"].includes(operation)) {
     return { ok: false, error: "操作无效" };
   }
@@ -506,8 +351,19 @@ async function updateStatus(ownerOpenid, id, operation, reminderEnabled, snoozeD
   if (operation === "renew" && !["active", "pending_confirmation"].includes(current.status)) {
     return { ok: false, error: "当前订阅不能确认续费" };
   }
-  if (operation === "snooze" && current.status !== "pending_confirmation" && !isOverdueActive) {
+  const remindedActive = current.status === "active" && current.lastReminderForDate === current.nextChargeDate;
+  if (operation === "snooze" && current.status !== "pending_confirmation" && !isOverdueActive && !remindedActive) {
     return { ok: false, error: "只有待确认的订阅可以稍后处理" };
+  }
+  if (operation === "snooze" && current.snoozedUntil && current.snoozedUntil > today) {
+    return { ok: false, error: `已延后至 ${current.snoozedUntil}，暂时无需处理` };
+  }
+  if (
+    operation === "renew"
+    && options.expectedNextChargeDate
+    && options.expectedNextChargeDate !== current.nextChargeDate
+  ) {
+    return { ok: true, duplicate: true, subscription: publicSubscription(current) };
   }
 
   const data = { updatedAt: db.serverDate() };
@@ -530,6 +386,10 @@ async function updateStatus(ownerOpenid, id, operation, reminderEnabled, snoozeD
   if (operation === "restore") {
     data.archiveDate = "";
     data.status = "active";
+    if (isValidDateKey(String(options.nextChargeDate || ""))) {
+      data.nextChargeDate = options.nextChargeDate;
+      data.billingAnchorDay = Number(options.nextChargeDate.slice(8, 10));
+    }
     data.reminderEnabled = false;
     data.reminderFailureCode = "";
     data.reminderFailureForDate = "";
@@ -537,9 +397,11 @@ async function updateStatus(ownerOpenid, id, operation, reminderEnabled, snoozeD
     data.serviceClosedAt = "";
   }
   if (operation === "renew") {
+    const anchorDay = billingAnchorDay(current);
     data.archiveDate = "";
     data.status = "active";
-    data.nextChargeDate = nextFutureChargeDate(current.nextChargeDate, current.billingCycle, today);
+    data.billingAnchorDay = anchorDay;
+    data.nextChargeDate = nextFutureChargeDate(current.nextChargeDate, current.billingCycle, today, anchorDay);
     data.reminderEnabled = Boolean(RENEWAL_TEMPLATE_ID && reminderEnabled);
     data.lastReminderForDate = "";
     data.reminderFailureCode = "";
@@ -549,19 +411,16 @@ async function updateStatus(ownerOpenid, id, operation, reminderEnabled, snoozeD
   }
   if (operation === "snooze") {
     const days = [1, 3, 7].includes(Number(snoozeDays)) ? Number(snoozeDays) : 1;
-    data.status = "pending_confirmation";
+    data.status = current.status === "active" ? "active" : "pending_confirmation";
     data.snoozedUntil = addDays(today, days);
-    data.reminderEnabled = Boolean(RENEWAL_TEMPLATE_ID && reminderEnabled);
-    data.lastReminderForDate = "";
+    // 微信订阅消息是一次性授权；延后只移动应用内任务，不重复申请或发送微信消息。
+    data.reminderEnabled = false;
     data.reminderFailureCode = "";
     data.reminderFailureForDate = "";
   }
   data.lastAction = operation;
   data.lastActionDate = today;
   await subscriptions.doc(id).update({ data });
-  if (["renew", "cancel", "snooze"].includes(operation)) {
-    await recordRetention(ownerOpenid, "reminder_handled").catch(() => {});
-  }
   return {
     ok: true,
     subscription: publicSubscription(Object.assign({}, current, data, {
@@ -604,51 +463,23 @@ async function clearAll(ownerOpenid) {
 async function login(ownerOpenid) {
   const result = await subscriptions.where({ ownerOpenid, recordType: PROFILE_RECORD_TYPE }).limit(1).get();
   const profile = result.data[0];
-  await recordRetention(ownerOpenid, "app_open", profile).catch(() => {});
+  if (profile && [
+    "analyticsEnabled",
+    "retentionLastOpenAt",
+    "retentionActivatedAt",
+    "retentionReminderEnabledAt",
+    "retentionReminderHandledAt",
+  ].some((field) => Object.prototype.hasOwnProperty.call(profile, field))) {
+    const remove = db.command.remove();
+    await subscriptions.doc(profile._id).update({ data: {
+      analyticsEnabled: remove,
+      retentionLastOpenAt: remove,
+      retentionActivatedAt: remove,
+      retentionReminderEnabledAt: remove,
+      retentionReminderHandledAt: remove,
+    } });
+  }
   return { ok: true, user: publicUser(ownerOpenid, profile) };
-}
-
-async function updatePreferences(ownerOpenid, input) {
-  const result = await subscriptions.where({ ownerOpenid, recordType: PROFILE_RECORD_TYPE }).limit(1).get();
-  const current = result.data[0];
-  const data = {
-    analyticsEnabled: Boolean(input && input.analyticsEnabled),
-    ownerOpenid,
-    recordType: PROFILE_RECORD_TYPE,
-    updatedAt: db.serverDate(),
-  };
-  if (current) await subscriptions.doc(current._id).update({ data });
-  else {
-    data.createdAt = db.serverDate();
-    await subscriptions.add({ data });
-  }
-  if (data.analyticsEnabled) {
-    await recordRetention(ownerOpenid, "activation_3").catch(() => {});
-  }
-  return { ok: true, user: publicUser(ownerOpenid, Object.assign({}, current || {}, data)) };
-}
-
-async function recordRetention(ownerOpenid, eventName, knownProfile) {
-  const allowed = {
-    app_open: "retentionLastOpenAt",
-    activation_3: "retentionActivatedAt",
-    reminder_enabled: "retentionReminderEnabledAt",
-    reminder_handled: "retentionReminderHandledAt",
-  };
-  const field = allowed[eventName];
-  if (!field) return;
-  let profile = knownProfile;
-  if (!profile) {
-    const result = await subscriptions.where({ ownerOpenid, recordType: PROFILE_RECORD_TYPE }).limit(1).get();
-    profile = result.data[0];
-  }
-  if (!profile || !profile.analyticsEnabled) return;
-  if (eventName === "activation_3") {
-    if (profile[field]) return;
-    const items = await fetchAll(subscriptions.where({ ownerOpenid, recordType: SUBSCRIPTION_RECORD_TYPE }));
-    if (items.length < 3) return;
-  }
-  await subscriptions.doc(profile._id).update({ data: { [field]: db.serverDate() } });
 }
 
 async function saveProfile(ownerOpenid, input) {
@@ -746,6 +577,7 @@ async function validateInput(input, ownerOpenid, current) {
     exchangeRate,
     exchangeRateDate,
     nextChargeDate,
+    billingAnchorDay: Number(nextChargeDate.slice(8, 10)),
     reminderDays,
     reminderEnabled,
     lastReminderForDate: "",
@@ -775,22 +607,30 @@ function normalizeColor(value) {
   return /^#[0-9A-F]{6}$/.test(color) ? color : DEFAULT_COLOR;
 }
 
-function advanceDate(value, cycle) {
+// 账单日锚点：31 号的月付订阅经过 2 月后必须回到 31 号，不能被短月永久截断。
+function advanceDate(value, cycle, anchorDay) {
   if (!isValidDateKey(value)) throw new Error("invalid date");
   const [year, month, day] = value.split("-").map(Number);
+  const targetDay = Number(anchorDay) || day;
   const date = new Date(Date.UTC(year, month - 1, 1));
   if (cycle === "yearly") date.setUTCFullYear(date.getUTCFullYear() + 1);
   else date.setUTCMonth(date.getUTCMonth() + 1);
   const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
-  date.setUTCDate(Math.min(day, lastDay));
+  date.setUTCDate(Math.min(targetDay, lastDay));
   return date.toISOString().slice(0, 10);
 }
 
-function nextFutureChargeDate(value, cycle, today) {
-  let next = advanceDate(value, cycle);
+function billingAnchorDay(item) {
+  const stored = Number(item && item.billingAnchorDay);
+  if (Number.isInteger(stored) && stored >= 1 && stored <= 31) return stored;
+  return Number(String(item && item.nextChargeDate || "").slice(8, 10)) || 1;
+}
+
+function nextFutureChargeDate(value, cycle, today, anchorDay) {
+  let next = advanceDate(value, cycle, anchorDay);
   let guard = 0;
   while (next <= today && guard < 240) {
-    next = advanceDate(next, cycle);
+    next = advanceDate(next, cycle, anchorDay);
     guard += 1;
   }
   return next;
@@ -871,7 +711,6 @@ function validateProfile(input, ownerOpenid, current) {
 
 function publicUser(ownerOpenid, profile) {
   return {
-    analyticsEnabled: Boolean(profile && profile.analyticsEnabled),
     idHint: maskOpenId(ownerOpenid),
     nickname: profile ? profile.nickname : "",
     avatarFileId: profile ? profile.avatarFileId : "",
@@ -1050,7 +889,9 @@ async function sendRenewalReminders() {
     try {
       await cloud.openapi.subscribeMessage.send({
         touser: first.ownerOpenid,
-        page: group.length === 1 ? `pages/index/index?focus=${first._id}` : "pages/index/index?pending=1",
+        page: group.length === 1
+          ? `pages/settings/settings?renewals=1&focus=${first._id}`
+          : "pages/settings/settings?renewals=1",
         templateId: RENEWAL_TEMPLATE_ID,
         data: reminderTemplateData(group),
       });
@@ -1101,7 +942,10 @@ async function reconcileSubscriptionStates(today) {
     recordType: SUBSCRIPTION_RECORD_TYPE,
     status: "active",
   }));
-  const toConfirm = active.filter((item) => item.nextChargeDate < today);
+  const toConfirm = active.filter((item) => (
+    item.nextChargeDate < today
+    && (!item.snoozedUntil || item.snoozedUntil <= today)
+  ));
   await mapWithConcurrency(toArchive, 8, (item) => subscriptions.doc(item._id).update({ data: {
     archivedAt: db.serverDate(),
     reminderEnabled: false,

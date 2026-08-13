@@ -1,24 +1,166 @@
 <view class="page calendar-page">
-  <view class="intro"><text class="eyebrow">RENEWAL CALENDAR</text><text class="page-title">续费日历</text><text class="page-lead">每一笔续费，都提前看见。</text></view>
+  <view class="intro-row">
+    <view class="intro"><text class="eyebrow">续费安排</text><text class="page-title">续费日历</text><text class="page-lead">每一笔续费，都提前看见。</text></view>
+    <view class="calendar-badge"><text>{{monthItems.length}}</text><text>本月安排</text></view>
+  </view>
 
   <view class="panel calendar-panel">
     <view class="calendar-toolbar"><button bindtap="previousMonth" aria-label="上个月">‹</button><text>{{monthTitle}}</text><button bindtap="nextMonth" aria-label="下个月">›</button></view>
     <view class="calendar-week"><text wx:for="{{weekdays}}" wx:key="*this">{{item}}</text></view>
     <view class="calendar-grid">
-      <view class="calendar-cell {{item.blank ? 'blank' : ''}} {{item.isToday ? 'today' : ''}} {{item.hasRenewal ? 'has-renewal' : ''}}" wx:for="{{cells}}" wx:key="key">
-        <text wx:if="{{!item.blank}}">{{item.day}}</text><view wx:if="{{item.hasRenewal}}" style="background: {{item.dotColor}}"></view>
+      <view
+        class="calendar-cell {{item.blank ? 'blank' : ''}} {{item.isToday ? 'today' : ''}} {{item.hasRenewal ? 'has-renewal' : ''}} {{item.selected ? 'selected-date' : ''}}"
+        wx:for="{{cells}}"
+        wx:key="key"
+        data-date="{{item.hasRenewal ? item.key : ''}}"
+        bindtap="openDateDetails"
+        hover-class="{{item.hasRenewal ? 'calendar-cell-pressed' : 'none'}}"
+        aria-role="{{item.hasRenewal ? 'button' : 'text'}}"
+        aria-label="{{item.ariaLabel}}"
+      >
+        <view
+          wx:if="{{!item.blank}}"
+          class="calendar-cell-visual"
+        >
+          <text>{{item.day}}</text>
+          <view
+            wx:if="{{item.hasRenewal}}"
+            class="renewal-dot"
+            style="{{item.hasRenewal ? 'background:' + item.cellColor + ';' : ''}}"
+          ></view>
+          <text wx:if="{{item.renewalCount > 1}}" class="renewal-count">{{item.renewalCount}}</text>
+        </view>
       </view>
     </view>
   </view>
 
-  <view class="section-head"><text class="section-title">本月续费</text><text>{{monthItems.length}} 项</text></view>
+  <view class="section-head"><view><text class="eyebrow">本月计划</text><text class="section-title">本月安排</text></view><text>{{monthItems.length}} 项</text></view>
   <view class="panel agenda">
-    <view class="agenda-item" wx:for="{{monthItems}}" wx:key="_id">
-      <view class="service-mark" style="background: {{item.color}}">{{item.mark}}</view>
+    <view class="agenda-item" wx:for="{{monthItems}}" wx:key="_id" data-date="{{item.nextChargeDate}}" bindtap="openDateDetails" hover-class="agenda-item-pressed">
+      <view class="service-mark {{item.logoPath ? 'has-logo' : ''}}" style="background: {{item.color}}">
+        <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+        <view wx:else class="service-fallback-icon" aria-hidden="true">
+          <view class="service-fallback-card"><view></view><view></view></view>
+        </view>
+      </view>
       <view class="agenda-copy"><text>{{item.name}}</text><text>{{item.dateText}} · {{item.note || item.category}}</text></view>
       <text class="agenda-price">{{item.amountText}}</text>
     </view>
-    <view class="empty-state" wx:if="{{!loading && !monthItems.length}}"><view class="empty-icon">○</view><text class="empty-title">本月暂无续费安排</text><text class="empty-copy">添加订阅后，日期会自动出现在这里。</text><button class="secondary-button" bindtap="addSubscription">添加订阅</button></view>
+    <view class="empty-state" wx:if="{{!loading && !monthItems.length}}"><view class="empty-icon">✓</view><text class="empty-title">本月暂无续费安排</text><text class="empty-copy">添加订阅后，日期会自动出现在这里。</text><button class="secondary-button" bindtap="addSubscription">添加订阅</button></view>
     <view class="loading" wx:if="{{loading}}">正在读取日历…</view>
+  </view>
+</view>
+
+<view class="date-detail-mask" wx:if="{{showDateDetails}}" catchtap="closeDateDetails">
+  <view class="date-detail-sheet" catchtap="noop">
+    <view class="sheet-handle"></view>
+    <view class="sheet-head">
+      <view>
+        <text class="eyebrow">续费详情</text>
+        <text class="sheet-title">{{selectedDateText}}续费安排</text>
+        <text class="sheet-subtitle">共 {{selectedItems.length}} 项，点击下方可直接管理</text>
+      </view>
+      <button class="sheet-close" bindtap="closeDateDetails" aria-label="关闭">×</button>
+    </view>
+
+    <scroll-view class="date-detail-list" scroll-y enhanced bounces show-scrollbar="{{false}}">
+      <view class="date-detail-scroll-content">
+        <view class="date-detail-card" wx:for="{{selectedItems}}" wx:key="_id">
+          <view class="detail-service-row">
+            <view class="service-mark {{item.logoPath ? 'has-logo' : ''}}" style="background: {{item.color}}">
+              <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+              <view wx:else class="service-fallback-icon" aria-hidden="true">
+                <view class="service-fallback-card"><view></view><view></view></view>
+              </view>
+            </view>
+            <view class="detail-service-copy">
+              <text class="detail-service-name">{{item.name}}</text>
+              <text>{{item.category}}{{item.note ? ' · ' + item.note : ''}}</text>
+            </view>
+            <view class="detail-price">
+              <view><text>{{item.amountText}}</text><text>/{{item.cycleText}}</text></view>
+              <text class="detail-source-currency" wx:if="{{item.sourceAmountText}}">原价 {{item.sourceAmountText}}</text>
+            </view>
+          </view>
+          <view class="detail-grid">
+            <view><text>本次日期</text><text>{{item.dateText}}</text></view>
+            <view><text>账单周期</text><text>{{item.billingCycle === 'yearly' ? '每年' : '每月'}}</text></view>
+            <view><text>提醒状态</text><text>{{item.reminderStatusText}}</text></view>
+            <view><text>扣款渠道</text><text>{{item.paymentChannelText}}</text></view>
+            <view wx:if="{{item.priceChangeText}}"><text>最近调价</text><text>{{item.priceChangeText}}</text></view>
+            <view wx:if="{{item.priceChangeText}}"><text>调整日期</text><text>{{item.priceChangedDateText}}</text></view>
+          </view>
+          <view class="calendar-official-action" wx:if="{{item.officialActionAvailable}}">
+            <button data-id="{{item._id}}" bindtap="toggleCalendarServiceAction">{{selectedActionId === item._id ? '收起官方操作指引' : '去处理续费 / 取消'}}</button>
+            <view class="calendar-action-guide" wx:if="{{selectedActionId === item._id}}">
+              <text>{{selectedActionGuide.name}}官方处理步骤</text>
+              <view class="calendar-action-group"><text>关闭自动续费</text><view wx:for="{{selectedActionGuide.cancelSteps}}" wx:for-item="step" wx:key="*this"><text>{{index + 1}}</text><text>{{step}}</text></view></view>
+              <view class="calendar-action-group"><text>重新续费</text><view wx:for="{{selectedActionGuide.renewSteps}}" wx:for-item="step" wx:key="*this"><text>{{index + 1}}</text><text>{{step}}</text></view></view>
+              <view class="calendar-action-buttons"><button bindtap="copyCalendarServiceAction">复制步骤</button><button class="primary" bindtap="openCalendarOfficialService">{{selectedActionGuide.directSupported ? '去官方小程序' : '查看操作步骤'}}</button></view>
+              <view class="calendar-action-confirm" wx:if="{{selectedActionConfirming}}"><text>回来后确认实际结果</text><view><button data-result="renew" bindtap="confirmCalendarServiceAction">已续费</button><button data-result="cancel" bindtap="confirmCalendarServiceAction">已关闭自动续费</button><button data-result="none" bindtap="confirmCalendarServiceAction">暂未完成</button></view></view>
+            </view>
+          </view>
+          <view class="calendar-cancel-guide {{item.status === 'active' ? '' : 'cancelled'}}">
+            <view class="calendar-cancel-guide-icon" aria-hidden="true">{{item.status === 'active' ? '!' : '✓'}}</view>
+            <view class="calendar-cancel-guide-copy">
+              <text>{{item.status === 'active' ? '取消订阅说明' : '已计划到期取消'}}</text>
+              <text wx:if="{{item.status === 'active'}}">取消后不再安排后续续费、提醒和支出预计；订序仅记录管理状态，不会代你退款或关闭服务商的自动续费。</text>
+              <text wx:else>{{item.serviceClosedDateText ? '已于 ' + item.serviceClosedDateText + ' 确认关闭自动续费。' : '已停止后续续费安排。'}}{{item.archiveDateText ? '将在 ' + item.archiveDateText + ' 自动归档。' : ''}}</text>
+            </view>
+          </view>
+          <view class="calendar-card-actions {{item.status === 'active' ? '' : 'is-cancelled'}}">
+            <button
+              class="calendar-manage-button edit"
+              data-id="{{item._id}}"
+              bindtap="editCalendarSubscription"
+              disabled="{{actionBusy}}"
+            >编辑订阅</button>
+            <button
+              class="calendar-manage-button pause"
+              wx:if="{{item.status === 'active'}}"
+              data-id="{{item._id}}"
+              data-operation="pause"
+              bindtap="manageCalendarSubscription"
+              loading="{{actionBusy}}"
+              disabled="{{actionBusy}}"
+            >暂停订阅</button>
+            <button
+              class="calendar-manage-button danger"
+              wx:if="{{item.status === 'active'}}"
+              data-id="{{item._id}}"
+              data-operation="cancel"
+              bindtap="manageCalendarSubscription"
+              loading="{{actionBusy}}"
+              disabled="{{actionBusy}}"
+            >取消订阅</button>
+            <block wx:else>
+              <button
+                class="calendar-manage-button restore"
+                data-id="{{item._id}}"
+                data-operation="restore"
+                bindtap="manageCalendarSubscription"
+                loading="{{actionBusy}}"
+                disabled="{{actionBusy}}"
+              >恢复订阅</button>
+              <button
+                class="calendar-manage-button pause"
+                data-id="{{item._id}}"
+                data-operation="pause"
+                bindtap="manageCalendarSubscription"
+                loading="{{actionBusy}}"
+                disabled="{{actionBusy}}"
+              >改为暂停</button>
+              <button
+                class="calendar-manage-button delete"
+                data-id="{{item._id}}"
+                bindtap="deleteCalendarSubscription"
+                loading="{{actionBusy}}"
+                disabled="{{actionBusy}}"
+              >永久删除</button>
+            </block>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
   </view>
 </view>

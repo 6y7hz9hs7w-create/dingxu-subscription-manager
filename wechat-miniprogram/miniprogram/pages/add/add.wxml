@@ -1,32 +1,236 @@
 <view class="page add-page">
-  <view class="intro">
-    <text class="eyebrow">NEW SUBSCRIPTION</text>
-    <text class="page-title">添加订阅</text>
-    <text class="page-lead">记录下来，续费前替你留意。</text>
+  <view class="intro-row">
+    <view class="intro">
+      <text class="eyebrow">{{editingId ? '编辑订阅' : '新建订阅'}}</text>
+      <text class="page-title">{{editingId ? '修改订阅' : '添加订阅'}}</text>
+      <text class="page-lead">{{editingId ? '更正信息后，统计与日历会同步更新。' : '三步记录，续费前替你留意。'}}</text>
+    </view>
+    <view
+      class="add-badge editing"
+      wx:if="{{editingId}}"
+      bindtap="cancelEdit"
+      hover-class="press-feedback"
+      hover-stay-time="80"
+      role="button"
+      aria-label="取消修改"
+    >×</view>
+    <view class="add-badge" wx:else>＋</view>
   </view>
 
-  <form class="form-panel panel" bindsubmit="submit">
-    <label class="field"><text>订阅分类</text><picker range="{{categories}}" value="{{categoryIndex}}" bindchange="changeCategory"><view class="picker-value">{{categories[categoryIndex]}} <text>›</text></view></picker></label>
-    <label class="field">
-      <text>服务名称</text>
-      <picker range="{{serviceOptions}}" value="{{serviceIndex}}" bindchange="changeService">
-        <view class="picker-value {{serviceIndex === 0 ? 'picker-placeholder' : ''}}">{{serviceOptions[serviceIndex]}} <text>›</text></view>
-      </picker>
-      <input wx:if="{{customService}}" class="custom-service-input" value="{{serviceName}}" bindinput="changeServiceName" maxlength="60" placeholder="请输入服务名称" />
-    </label>
-    <label class="field"><text>订阅金额</text><view class="money-input"><text>¥</text><input name="amount" type="digit" placeholder="0.00" /></view></label>
-    <label class="field"><text>账单周期</text><picker range="{{billingCycles}}" value="{{billingIndex}}" bindchange="changeBilling"><view class="picker-value">{{billingCycles[billingIndex]}} <text>›</text></view></picker></label>
-    <label class="field"><text>下次续费</text><picker mode="date" value="{{nextChargeDate}}" bindchange="changeDate"><view class="picker-value">{{nextChargeDate}} <text>›</text></view></picker></label>
-    <label class="field"><text>提前提醒</text><picker range="{{reminderDays}}" value="{{reminderIndex}}" bindchange="changeReminder"><view class="picker-value">{{reminderDays[reminderIndex]}} 天前 <text>›</text></view></picker></label>
-
-    <view class="field colors-field">
-      <text>标记颜色</text>
-      <view class="color-list">
-        <view class="color-choice {{selectedColor === item ? 'selected' : ''}}" wx:for="{{colors}}" wx:key="*this" data-color="{{item}}" bindtap="chooseColor"><view style="background: {{item}}"></view></view>
+  <form class="subscription-form form-panel" bindsubmit="submit">
+    <view class="form-section panel">
+      <view class="form-section-head"><view>01</view><view><text>填写服务</text><text>直接输入名称，或点选常用会员</text></view></view>
+      <label class="field"><text>订阅分类</text><picker range="{{categories}}" value="{{categoryIndex}}" bindchange="changeCategory"><view class="picker-value">{{categories[categoryIndex]}} <text>›</text></view></picker></label>
+      <label class="field">
+        <text>服务名称</text>
+        <input class="service-name-input" value="{{serviceName}}" bindinput="changeServiceName" maxlength="60" placeholder="输入任意订阅服务名称" />
+        <view class="service-suggestions">
+          <text>常用</text>
+          <scroll-view class="service-suggestion-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+            <view class="service-suggestion-list">
+              <view
+                class="service-suggestion {{serviceName === item ? 'selected' : ''}}"
+                wx:for="{{serviceOptions}}"
+                wx:key="*this"
+                data-name="{{item}}"
+                bindtap="chooseSuggestedService"
+                hover-class="press-feedback"
+                hover-stay-time="80"
+              >{{item}}</view>
+            </view>
+          </scroll-view>
+        </view>
+      </label>
+      <view class="field last-field icon-field">
+        <text>订阅图标</text>
+        <view class="icon-picker">
+          <view class="subscription-icon-preview {{customIconPreviewPath || serviceLogoPath ? 'has-image' : ''}}" style="background: {{selectedColor}}">
+            <image
+              wx:if="{{customIconPreviewPath || serviceLogoPath}}"
+              src="{{customIconPreviewPath || serviceLogoPath}}"
+              mode="{{customIconPreviewPath ? 'aspectFill' : 'aspectFit'}}"
+              fade-in="{{false}}"
+            />
+            <view wx:else class="service-fallback-icon" aria-hidden="true">
+              <view class="service-fallback-card"><view></view><view></view></view>
+            </view>
+          </view>
+          <view class="icon-picker-copy">
+            <text>{{matchedIconName ? '已匹配：' + matchedIconName : customIconPreviewPath ? '已使用自定义图标' : serviceLogoPath ? '已匹配内置服务图标' : '当前使用通用图标'}}</text>
+            <text>{{matchedIconName ? '图标已保存到你的微信云空间' : '也可以选择方形图片作为图标'}}</text>
+          </view>
+          <view class="icon-picker-actions">
+            <button
+              class="icon-picker-action primary"
+              bindtap="chooseSubscriptionIcon"
+              hover-class="press-feedback"
+              hover-stay-time="80"
+              plain
+              role="button"
+            >{{customIconPreviewPath ? '更换' : '选择图片'}}</button>
+            <button
+              wx:if="{{customIconPreviewPath}}"
+              class="icon-picker-action"
+              bindtap="removeSubscriptionIcon"
+              hover-class="press-feedback"
+              hover-stay-time="80"
+              plain
+              role="button"
+            >恢复默认</button>
+          </view>
+        </view>
+        <view class="icon-match-panel" wx:if="{{customService && serviceName}}">
+          <view class="icon-match-head">
+            <view>
+              <text>联网自动匹配</text>
+              <text>选择后立即预览，保存订阅时一并使用</text>
+            </view>
+            <button
+              wx:if="{{!iconSearching && serviceName.length >= 2}}"
+              class="icon-match-retry"
+              bindtap="retryIconSearch"
+              hover-class="press-feedback"
+              hover-stay-time="80"
+              plain
+              role="button"
+            >重新匹配</button>
+            <text wx:elif="{{iconSearching}}" class="icon-match-loading">查找中…</text>
+          </view>
+          <view class="icon-candidates" wx:if="{{iconCandidates.length}}">
+            <view
+              class="icon-candidate"
+              wx:for="{{iconCandidates}}"
+              wx:key="id"
+              data-id="{{item.id}}"
+              bindtap="selectMatchedIcon"
+              hover-class="press-feedback"
+              hover-stay-time="80"
+              role="button"
+              aria-label="使用 {{item.name}} 图标"
+            >
+              <image src="{{item.previewDataUrl}}" mode="aspectFill" lazy-load="{{true}}" fade-in="{{false}}" />
+              <text>{{item.name}}</text>
+              <text>{{item.publisher}}</text>
+            </view>
+          </view>
+          <view class="icon-match-status" wx:else>
+            <view class="icon-match-spinner" wx:if="{{iconSearching}}"></view>
+            <view class="icon-match-check" wx:elif="{{matchedIconName}}">✓</view>
+            <view class="icon-match-search" wx:else></view>
+            <text>{{iconSearchMessage || '输入两个字以上即可查找'}}</text>
+          </view>
+        </view>
       </view>
     </view>
 
-    <label class="field"><text>备注</text><input name="note" maxlength="120" placeholder="例如：与家人共享" /></label>
-    <button class="primary-button submit-button" form-type="submit" loading="{{submitting}}" disabled="{{submitting}}">添加并开启提醒</button>
+    <view class="form-section panel">
+      <view class="form-section-head"><view>02</view><view><text>设置账单</text><text>金额和下一次扣款时间</text></view></view>
+      <view class="field">
+        <text>结算币种</text>
+        <view class="currency-switch" role="radiogroup" aria-label="选择订阅结算币种">
+          <view
+            wx:for="{{currencies}}"
+            wx:key="*this"
+            class="currency-option {{currencyIndex === index ? 'selected' : ''}}"
+            data-index="{{index}}"
+            bindtap="changeCurrency"
+            hover-class="press-feedback"
+            hover-stay-time="80"
+            role="radio"
+            aria-checked="{{currencyIndex === index}}"
+          >{{item}}</view>
+        </view>
+      </view>
+      <label class="field"><text>订阅金额</text><view class="money-input"><text>{{currencySymbols[currencyIndex]}}</text><input name="amount" type="digit" value="{{amount}}" bindinput="changeAmount" placeholder="0.00" /></view></label>
+      <view class="exchange-rate-card" wx:if="{{currencyIndex === 1}}">
+        <view class="exchange-rate-spinner" wx:if="{{exchangeRateLoading}}"></view>
+        <view class="exchange-rate-content" wx:elif="{{exchangeRate}}">
+          <view>
+            <text>预计折合人民币</text>
+            <text>{{convertedAmountText ? '¥' + convertedAmountText : '输入美元金额后自动换算'}}</text>
+          </view>
+          <text>1 美元 ≈ ¥{{exchangeRateText}} · {{exchangeRateDateText}}</text>
+          <text>汇率由 ExchangeRate-API 提供，保存时会按最新汇率计算。</text>
+        </view>
+        <view class="exchange-rate-error" wx:else>
+          <view><text>暂时无法获取美元汇率</text><text>{{exchangeRateError || '请检查网络后重试'}}</text></view>
+          <button bindtap="retryExchangeRate" loading="{{exchangeRateLoading}}">重新获取</button>
+        </view>
+      </view>
+      <label class="field"><text>账单周期</text><picker range="{{billingCycles}}" value="{{billingIndex}}" bindchange="changeBilling"><view class="picker-value">{{billingCycles[billingIndex]}} <text>›</text></view></picker></label>
+      <label class="field"><text>扣款渠道</text><picker range="{{paymentChannels}}" value="{{paymentIndex}}" bindchange="changePaymentChannel"><view class="picker-value">{{paymentChannels[paymentIndex]}} <text>›</text></view></picker></label>
+      <label class="field last-field"><text>下次续费</text><picker mode="date" value="{{nextChargeDate}}" bindchange="changeDate"><view class="picker-value">{{nextChargeDate}} <text>›</text></view></picker></label>
+    </view>
+
+    <view class="form-section panel">
+      <view class="form-section-head"><view>03</view><view><text>提醒与标记</text><text>选择提前提醒时间和识别色</text></view></view>
+      <label class="field"><text>提前提醒</text><picker range="{{reminderDays}}" value="{{reminderIndex}}" bindchange="changeReminder"><view class="picker-value">{{reminderDays[reminderIndex]}} 天前 <text>›</text></view></picker></label>
+      <view class="reminder-note {{reminderAvailable ? 'available' : ''}}">
+        <view></view>
+        <text wx:if="{{editingId}}">{{editingReminderEnabled ? '保存后将保留当前微信提醒；修改续费日期后会按新日期计算。' : '保存修改不会主动申请微信授权，可在总览中单独开启提醒。'}}</text>
+        <text wx:else>{{reminderAvailable ? '提交时将请求微信授权，授权后会在所选日期发送一次服务通知。' : '微信消息模板尚未配置，当前仅在小程序内显示续费日期。'}}</text>
+      </view>
+      <view class="field colors-field">
+        <text>标记颜色</text>
+        <view class="color-picker">
+          <view
+            class="color-picker-trigger"
+            bindtap="toggleColorPalette"
+            hover-class="press-feedback"
+            hover-stay-time="80"
+            role="button"
+            aria-label="打开自定义色盘"
+          >
+            <view class="color-preview" style="background: {{selectedColor}}">
+              <view class="service-fallback-icon" aria-hidden="true">
+                <view class="service-fallback-card"><view></view><view></view></view>
+              </view>
+            </view>
+            <view class="color-picker-copy">
+              <text>{{selectedColor}}</text>
+              <text>点开色盘自由调色</text>
+            </view>
+            <text class="color-picker-action">{{showColorPalette ? '收起' : '自定义'}}</text>
+          </view>
+          <view class="color-palette" wx:if="{{showColorPalette}}">
+            <view
+              id="color-plane"
+              class="color-plane"
+              style="background: linear-gradient(to right, #FFFFFF, {{hueColor}})"
+              bindtouchstart="startColorTouch"
+              catchtouchmove="moveColorTouch"
+              bindtouchend="flushColorState"
+            >
+              <view class="color-plane-shade"></view>
+              <view class="color-cursor" style="{{colorCursorStyle}}"><view style="background: {{selectedColor}}"></view></view>
+            </view>
+            <view
+              id="hue-slider"
+              class="hue-slider"
+              bindtouchstart="startHueTouch"
+              catchtouchmove="moveHueTouch"
+              bindtouchend="flushColorState"
+            >
+              <view class="hue-cursor" style="{{hueCursorStyle}}"><view style="background: {{hueColor}}"></view></view>
+            </view>
+            <view class="preset-head"><text>快捷颜色</text><text>可继续在色盘中微调</text></view>
+            <view class="preset-colors">
+              <view
+                class="preset-color {{selectedColor === item ? 'selected' : ''}}"
+                wx:for="{{presetColors}}"
+                wx:key="*this"
+                data-color="{{item}}"
+                bindtap="choosePresetColor"
+                hover-class="press-feedback"
+                hover-stay-time="80"
+              ><view style="background: {{item}}"></view></view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <label class="field last-field"><text>备注</text><input name="note" value="{{note}}" bindinput="changeNote" maxlength="120" placeholder="例如：与家人共享" /></label>
+    </view>
+
+    <button class="primary-button submit-button" form-type="submit" loading="{{submitting}}" disabled="{{submitting}}">{{editingId ? '保存修改' : reminderAvailable ? '添加并申请微信提醒' : '添加订阅'}}</button>
   </form>
 </view>
