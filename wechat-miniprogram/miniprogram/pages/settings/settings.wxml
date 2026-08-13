@@ -111,18 +111,42 @@
     <view class="stat-button {{expandedStat === 'all' ? 'selected' : ''}}" data-stat="all" bindtap="showAccountStat" hover-class="press-feedback" hover-stay-time="80" role="button">
       <text class="stat-value-line">{{totalCount}}项</text>
       <text class="stat-label">全部订阅</text>
-      <text class="stat-more">{{expandedStat === 'all' ? '收起 ↑' : '展开 ↓'}}</text>
+      <text class="stat-more" data-stat="all" catchtap="showAccountStat">{{expandedStat === 'all' ? '收起 ↑' : '展开 ↓'}}</text>
     </view>
     <view class="stat-button {{expandedStat === 'active' ? 'selected' : ''}}" data-stat="active" bindtap="showAccountStat" hover-class="press-feedback" hover-stay-time="80" role="button">
       <text class="stat-value-line">{{activeCount}}项</text>
       <text class="stat-label">生效订阅</text>
-      <text class="stat-more">{{expandedStat === 'active' ? '收起 ↑' : '展开 ↓'}}</text>
+      <text class="stat-more" data-stat="active" catchtap="showAccountStat">{{expandedStat === 'active' ? '收起 ↑' : '展开 ↓'}}</text>
     </view>
     <view class="stat-button {{expandedStat === 'monthly' ? 'selected' : ''}}" data-stat="monthly" bindtap="showAccountStat" hover-class="press-feedback" hover-stay-time="80" role="button">
       <text class="stat-value-line money-value">¥{{monthlyValueText}}</text>
       <text class="stat-label">月均支出</text>
-      <text class="stat-more">{{expandedStat === 'monthly' ? '收起 ↑' : '展开 ↓'}}</text>
+      <text class="stat-more" data-stat="monthly" catchtap="showAccountStat">{{expandedStat === 'monthly' ? '收起 ↑' : '展开 ↓'}}</text>
     </view>
+  </view>
+
+  <view class="account-stat-detail panel {{expandedStat === 'history' ? 'history-detail' : ''}}" wx:if="{{expandedStat}}">
+    <view class="account-stat-detail-head">
+      <view><text>{{statDetailTitle}}</text><text>{{statDetailCopy}}</text></view>
+      <text>{{statDetailValue}}</text>
+    </view>
+    <view class="account-stat-detail-list" wx:if="{{statDetailItems.length}}">
+      <view class="account-stat-detail-row {{expandedStat === 'history' ? 'history-row' : ''}}" wx:for="{{statDetailItems}}" wx:key="_id">
+        <view class="stat-detail-logo {{item.logoPath ? 'has-logo' : ''}}" style="background: {{item.color}}">
+          <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
+          <view wx:else class="stat-detail-fallback"><view></view><view></view></view>
+        </view>
+        <view class="stat-detail-copy"><text>{{item.name}}</text><text>{{item.metaText}}</text></view>
+        <view class="stat-detail-side {{expandedStat === 'history' ? 'history-side' : ''}}">
+          <text class="stat-detail-value">{{item.valueText}}</text>
+          <view class="history-actions" wx:if="{{expandedStat === 'history'}}">
+            <button data-id="{{item._id}}" data-operation="restore" bindtap="manageHistorySubscription" disabled="{{actionBusy}}">恢复</button>
+            <button class="danger" data-id="{{item._id}}" data-operation="delete" bindtap="manageHistorySubscription" disabled="{{actionBusy}}">删除</button>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="account-stat-detail-empty" wx:else>当前没有符合条件的订阅。</view>
   </view>
 
   <view class="service-center panel">
@@ -135,13 +159,6 @@
       <view class="upcoming {{serviceFilter === 'upcoming' ? 'selected' : ''}}" data-tone="upcoming" bindtap="filterServiceCenter" hover-class="service-summary-pressed" hover-stay-time="80" role="button"><text>{{serviceCounts.upcoming}}</text><text>30 天内</text></view>
       <view class="follow-up {{serviceFilter === 'follow-up' ? 'selected' : ''}}" data-tone="follow-up" bindtap="filterServiceCenter" hover-class="service-summary-pressed" hover-stay-time="80" role="button"><text>{{serviceCounts.followUp}}</text><text>状态跟进</text></view>
     </view>
-    <button class="service-center-toggle" bindtap="toggleServiceCenter" disabled="{{loading}}">
-      <view>
-        <text>{{serviceCenterExpanded ? '收起任务' : serviceFocusTitle}}</text>
-        <text>{{serviceCenterExpanded ? '处理结果会自动同步到总览、日历和分析' : serviceFocusCopy}}</text>
-      </view>
-      <text>{{serviceCenterExpanded ? '↑' : '↓'}}</text>
-    </button>
     <view class="service-task-list" wx:if="{{serviceCenterExpanded && serviceItems.length}}">
       <block wx:for="{{serviceItems}}" wx:key="_id">
       <view class="service-task">
@@ -181,11 +198,10 @@
         </view>
         <view class="service-action-buttons">
           <button bindtap="copyServiceAction">复制步骤</button>
-          <button class="primary" bindtap="openOfficialService">{{serviceActionGuide.directSupported ? '去官方小程序' : '查看操作步骤'}}</button>
         </view>
         <view class="service-action-confirm" wx:if="{{serviceActionConfirming}}">
           <text>回来后，请确认实际结果</text>
-          <view><button data-result="renew" bindtap="confirmServiceAction">已续费</button><button data-result="cancel" bindtap="confirmServiceAction">已关闭自动续费</button><button data-result="none" bindtap="confirmServiceAction">暂未完成</button></view>
+          <view><button class="renew" data-result="renew" bindtap="confirmServiceAction">已续费</button><button class="cancelled" data-result="cancel" bindtap="confirmServiceAction">已关闭自动续费</button><button class="pending" data-result="none" bindtap="confirmServiceAction">暂未完成</button></view>
         </view>
       </view>
       </block>
@@ -224,30 +240,6 @@
     <view class="history-entry-icon">↺</view>
     <view><text>历史记录</text><text>已取消并归档的订阅单独保存在这里</text></view>
     <view class="history-entry-side"><text>{{historyCount}} 项</text><text>{{expandedStat === 'history' ? '收起 ↑' : '查看 ›'}}</text></view>
-  </view>
-
-  <view class="account-stat-detail panel {{expandedStat === 'history' ? 'history-detail' : ''}}" wx:if="{{expandedStat}}">
-    <view class="account-stat-detail-head">
-      <view><text>{{statDetailTitle}}</text><text>{{statDetailCopy}}</text></view>
-      <text>{{statDetailValue}}</text>
-    </view>
-    <view class="account-stat-detail-list" wx:if="{{statDetailItems.length}}">
-      <view class="account-stat-detail-row {{expandedStat === 'history' ? 'history-row' : ''}}" wx:for="{{statDetailItems}}" wx:key="_id">
-        <view class="stat-detail-logo {{item.logoPath ? 'has-logo' : ''}}" style="background: {{item.color}}">
-          <image wx:if="{{item.logoPath}}" src="{{item.logoPath}}" mode="aspectFit" lazy-load="{{true}}" fade-in="{{false}}" />
-          <view wx:else class="stat-detail-fallback"><view></view><view></view></view>
-        </view>
-        <view class="stat-detail-copy"><text>{{item.name}}</text><text>{{item.metaText}}</text></view>
-        <view class="stat-detail-side {{expandedStat === 'history' ? 'history-side' : ''}}">
-          <text class="stat-detail-value">{{item.valueText}}</text>
-          <view class="history-actions" wx:if="{{expandedStat === 'history'}}">
-            <button data-id="{{item._id}}" data-operation="restore" bindtap="manageHistorySubscription" disabled="{{actionBusy}}">恢复</button>
-            <button class="danger" data-id="{{item._id}}" data-operation="delete" bindtap="manageHistorySubscription" disabled="{{actionBusy}}">删除</button>
-          </view>
-        </view>
-      </view>
-    </view>
-    <view class="account-stat-detail-empty" wx:else>当前没有符合条件的订阅。</view>
   </view>
 
   <view class="reminder-center panel">

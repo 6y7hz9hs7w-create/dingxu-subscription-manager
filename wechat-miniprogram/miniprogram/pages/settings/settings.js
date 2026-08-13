@@ -591,18 +591,6 @@ Page({
     });
   },
 
-  toggleServiceCenter() {
-    const serviceCenterExpanded = !this.data.serviceCenterExpanded;
-    this.setData({
-      serviceCenterExpanded,
-      serviceActionConfirming: false,
-      serviceActionGuide: null,
-      serviceActionId: "",
-      serviceFilter: "",
-      serviceItems: serviceCenterExpanded ? (this._serviceItems || []) : [],
-    });
-  },
-
   toggleServiceAction(event) {
     if (this.data.actionBusy) return;
     const id = event.currentTarget.dataset.id;
@@ -625,21 +613,6 @@ Page({
     wx.setClipboardData({
       data: guide.copyText,
       success: () => this.setData({ serviceActionConfirming: true }),
-    });
-  },
-
-  openOfficialService() {
-    const guide = this.data.serviceActionGuide;
-    if (!guide) return;
-    if (!guide.directSupported) {
-      this.copyServiceAction();
-      return;
-    }
-    wx.navigateToMiniProgram({
-      appId: guide.miniProgram.appId,
-      path: guide.miniProgram.path || "",
-      success: () => this.setData({ serviceActionConfirming: true }),
-      fail: () => wx.showToast({ title: "暂时无法打开，请按页面步骤操作", icon: "none" }),
     });
   },
 

@@ -41,7 +41,7 @@ test("official action guide covers the 20-service launch list without invented d
   const apple = actions.guideFor({ name: "网易云音乐", paymentChannel: "apple" });
   assert.match(wechat.copyText, /微信.*支付设置.*自动续费/);
   assert.match(apple.copyText, /Apple[\s\S]*订阅/);
-  assert.equal(wechat.directSupported, false);
+  assert.equal("miniProgram" in wechat, false);
   assert.equal(actions.guideFor({ name: "未收录服务", paymentChannel: "other" }), null);
 });
 
@@ -389,10 +389,12 @@ test("service center groups renewals and manages them without returning to the o
   assert.deepEqual(Array.from(recentActions, (item) => item.dateText), ["8月3日", "8月2日"]);
   assert.match(settingsTemplate, /续费处理中心/);
   assert.match(settingsTemplate, /最近操作/);
-  assert.match(settingsTemplate, /bindtap="toggleServiceCenter"/);
+  assert.doesNotMatch(settingsTemplate, /service-center-toggle|bindtap="toggleServiceCenter"/);
+  assert.match(settingsTemplate, /data-tone="urgent" bindtap="filterServiceCenter"/);
+  assert.match(settingsTemplate, /data-tone="upcoming" bindtap="filterServiceCenter"/);
+  assert.match(settingsTemplate, /data-tone="follow-up" bindtap="filterServiceCenter"/);
   assert.match(settingsTemplate, /bindtap="toggleRecentActions"/);
   assert.match(settingsTemplate, /bindtap="openServiceTask"/);
-  assert.match(settingsTemplate, /serviceFocusTitle/);
   assert.match(settingsTemplate, /service-task-deadline/);
   assert.match(settingsLogic, /showActionSheet/);
   assert.match(settingsLogic, /enableSubscriptionReminder\(item\._id\)/);
@@ -412,10 +414,6 @@ test("service center groups renewals and manages them without returning to the o
     setData(data) { Object.assign(this.data, data); },
   });
   page._serviceItems = result.serviceItems;
-  assert.equal(page.data.serviceItems.length, 0);
-  page.toggleServiceCenter();
-  assert.equal(page.data.serviceItems.length, 5);
-  page.toggleServiceCenter();
   assert.equal(page.data.serviceItems.length, 0);
   page.filterServiceCenter({ currentTarget: { dataset: { tone: "urgent" } } });
   assert.equal(page.data.serviceCenterExpanded, true);

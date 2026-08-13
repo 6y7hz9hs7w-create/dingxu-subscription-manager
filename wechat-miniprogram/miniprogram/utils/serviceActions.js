@@ -45,8 +45,6 @@ const SERVICES = [
 ].map(([name, aliases]) => ({
   name,
   aliases: [name].concat(aliases),
-  // 只有核验过的 appId 才可填写。空值必须回退到操作步骤，禁止猜测跳转目标。
-  miniProgram: null,
 }));
 
 function normalized(value) {
@@ -79,8 +77,6 @@ function guideFor(item) {
     name: service.name,
     cancelSteps,
     renewSteps,
-    miniProgram: service.miniProgram,
-    directSupported: Boolean(service.miniProgram && service.miniProgram.appId),
     copyText: [
       `${service.name}续费/取消指引`,
       "关闭自动续费：",
