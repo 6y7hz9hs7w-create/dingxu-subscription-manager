@@ -12,3 +12,6 @@ npm-debug.log*
 
 # env files
 .env*
+
+# WeChat devtools local private config
+wechat-miniprogram/project.private.config.json
